@@ -1,0 +1,10 @@
+node_modules
+dist
+dist-artifact
+*.log
+.DS_Store
+# Demobilder legges ikke i det offentlige repoet. Se src/assets/demo-photos/README.md.
+src/assets/demo-photos/*.jpg
+src/assets/demo-photos/*.jpeg
+src/assets/demo-photos/*.png
+src/assets/demo-photos/*.webp
