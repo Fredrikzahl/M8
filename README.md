@@ -18,7 +18,8 @@ npm run preview    # se det ferdige bygget
 ```
 
 `dist/` er vanlige statiske filer og kan legges på en hvilken som helst
-nettjener.
+nettjener. Når siden ligger på en adresse med https, kan den installeres som
+egen app på mobil og PC.
 
 `npm run build:artifact` lager i tillegg `dist-artifact/planm8.html`, én fil der
 skript, stiler og bilder ligger inne i fila.
@@ -35,6 +36,20 @@ skript, stiler og bilder ligger inne i fila.
 - Blinkskudd, Topp 100 med ratingmodus, kategorier, delebilde og vinnervegg
 - «Send maskin» med tilgangsnivå, utløp og sporing, og leads til leverandører
 - Roller og visninger: administrator, leder, verksmester, fører, sjåfør og partner
+- Søk og hurtigkommandoer med Ctrl K eller ⌘K: sider, objekter, annonser, leieforhold og fraktoppdrag
+- Lys og mørk modus som følger systemet eller velges under «Mer»
+- Installering som egen app, med ikon på hjemskjermen og åpning uten nett
+
+## Design
+
+Alt utseende ligger i `src/styles.css` og styres av variabler øverst i fila.
+Lys og mørk modus bruker de samme reglene med hvert sitt sett farger.
+
+- Merkefargene er mørk grønn-svart, rav for SaleM8, blå for LogM8 og grønn for FleetM8. Menyen tar farge etter delen du står i.
+- Inter brukes til all tekst. Oswald brukes bare i logoen og i poengene på Topp 100.
+- På mobil er menyen nederst, sidene har stor tittel som krymper inn i toppfeltet når du ruller, og dialoger kommer opp som ark nedenfra som kan dras ned.
+- På PC er menyen til venstre, lister ligger i flere kolonner, og dialoger vises midt på skjermen.
+- Bevegelse er kort og kan slås av med systemvalget for redusert bevegelse.
 
 ## Dette er simulert eller ikke koblet til
 
@@ -62,9 +77,13 @@ Siden «Om denne versjonen» i appen viser den samme oversikten.
 | `src/store.ts` | Tilstand, lagring i nettleseren og oppslag |
 | `src/actions.ts` | Alt som endrer data: leieflyt, bud, frakt, stemmer og leads |
 | `src/lib/logic.ts` | Forretningsregler, gebyrer, estimat og de simulerte AI-forslagene |
-| `src/ui/` | Felles byggeklosser: knapper, kort, kamera, sveipekort, signatur og kart |
-| `src/screens/` | Skjermene, én fil per del av appen |
+| `src/lib/theme.ts` | Lys, mørk og automatisk modus |
+| `src/lib/install.ts` | Installering som egen app |
+| `src/styles.css` | Designsystemet: farger, typografi og alle komponenter |
+| `src/ui/` | Felles byggeklosser: sideramme, knapper, kort, ark, kamera, sveipekort, signatur og kart |
+| `src/screens/` | Skjermene, én fil per del av appen. `search.tsx` er søket |
 | `src/App.tsx` | Ruter, meny og tilgang per rolle |
+| `public/` | Ikoner, manifest og tjenestearbeideren som gjør appen installerbar |
 
 Vite, React og TypeScript. Ingen andre rammeverk.
 

@@ -21,7 +21,7 @@ const style = css.map(f => readFileSync(join(assets, f), 'utf8')).join('\n').rep
 
 const html = `<title>PlanM8 nettapp</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Public+Sans:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&family=Oswald:wght@500;600&display=swap">
 <style>
 ${style}
 </style>

@@ -33,9 +33,9 @@ export function Topp100() {
     toast(res === 'lagret' ? 'Bildet er lagret. Del det der du vil.' : 'Kunne ikke lagre bildet her', res === 'lagret' ? 'ok' : 'bad')
   }
   return (
-    <Page tone="night" brand={<T100 />} eyebrow={s.settings.season} right={<TopActions />}>
+    <Page tone="night" short="Topp 100" brand={<T100 />} eyebrow={s.settings.season} right={<TopActions />}>
       <p className="muted">Norges fineste maskiner, stemt frem av dem som kjører dem.</p>
-      <div className="hstack wrap">
+      <div className="actions">
         <Btn kind="amber" small icon="star" to="/rating">Stem på maskiner</Btn>
         <Btn kind="ghost" small icon="trophy" to="/vinnere">Vinnere</Btn>
         <Btn kind="ghost" small icon="camera" to="/blinkskudd">Ta blinkskudd</Btn>
@@ -43,8 +43,8 @@ export function Topp100() {
       </div>
       {best && (
         <Card className="amber">
-          <p className="eyebrow" style={{ color: '#3F3212' }}>Din beste plassering</p>
-          <div className="hstack"><span className="score" style={{ color: '#13201B', fontSize: 52, minWidth: 0 }}>Nr. {best.rank}</span><div className="grow"><h3>{best.blink.objName}</h3><p>{best.score.toLocaleString('nb-NO')} poeng · {best.votes} stemmer</p></div></div>
+          <p className="eyebrow">Din beste plassering</p>
+          <div className="hstack"><span className="score" style={{ color: 'var(--ink)', fontSize: 52, minWidth: 0 }}>Nr. {best.rank}</span><div className="grow"><h3>{best.blink.objName}</h3><p>{best.score.toLocaleString('nb-NO')} poeng · {best.votes} stemmer</p></div></div>
           <div className="hstack wrap">
             <Btn kind="primary" small icon="share" onClick={() => share(best)}>Lag delebilde</Btn>
             <Btn kind="quiet" small icon="copy" onClick={async () => toast((await copyText(`Min maskin er nr. ${best.rank} i Norge på Topp 100 i PlanM8.`)) ? 'Teksten er kopiert' : 'Kunne ikke kopiere')}>Kopier tekst</Btn>
@@ -103,7 +103,7 @@ export function RatingMode() {
   const mine = s.votes.filter(v => v.userId === me.user.id).length
   const next = () => setScore(75)
   return (
-    <Page tone="night" brand={<T100 />} eyebrow="Ratingmodus" back="/topp100" right={<Pill tone="ink-inv">{mine} stemmer gitt</Pill>}>
+    <Page tone="night" short="Topp 100" brand={<T100 />} eyebrow="Ratingmodus" back="/topp100" right={<Pill tone="ink-inv">{mine} stemmer gitt</Pill>}>
       {!b ? (
         <Empty title="Du har stemt på alle" text="Kom tilbake når nye blinkskudd er godkjent.">
           {skipped.length > 0 && <Btn kind="amber" onClick={() => setSkipped([])}>Vis de du hoppet over</Btn>}
@@ -135,7 +135,7 @@ export function Vinnere() {
   const nowD = new Date()
   const months = Array.from({ length: 36 }, (_, i) => new Date(nowD.getFullYear(), nowD.getMonth() - i, 1))
   return (
-    <Page tone="night" brand={<T100 />} eyebrow="Vinnerveggen" back="/topp100" wide sub="Månedens vinner de siste 36 månedene. Samme maskin kan vinne én gang per år.">
+    <Page tone="night" short="Topp 100" brand={<T100 />} eyebrow="Vinnerveggen" back="/topp100" wide sub="Månedens vinner de siste 36 månedene. Samme maskin kan vinne én gang per år.">
       <div className="wall">
         {months.map((m, i) => {
           const w = s.winners.find(x => x.year === m.getFullYear() && x.month === m.getMonth())

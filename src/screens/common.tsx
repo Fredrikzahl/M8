@@ -10,7 +10,7 @@ import { myNotes } from '../actions'
 
 export const qs = (path: string) => new URLSearchParams(path.split('?')[1] ?? '')
 export const priceText = (l: Pick<Listing, 'mode' | 'price' | 'unit'>) => (l.mode === 'salg' ? kr(l.price) : `${kr(l.price)} ${UNIT_LABEL[l.unit]}`)
-export const readingText = (o: Pick<Obj, 'reading' | 'meter' | 'type'>) => (o.type === 'Redskap' ? '' : `${num(o.reading)} ${meterUnit(o.meter)}`)
+export const readingText = (o: Pick<Obj, 'reading' | 'meter' | 'type'>) => (o.type === 'Redskap' ? '' : `${num(o.reading)}\u00A0${meterUnit(o.meter)}`)
 export const objSub = (o: Obj) => [o.internalId, o.place, readingText(o)].filter(Boolean).join(' · ')
 /** Annonsebildet: blinkskuddet når selgeren har valgt det, ellers første bilde på objektkortet. */
 export const listingSrc = (s: State, l: Listing, o: Obj) =>
@@ -20,27 +20,32 @@ export const VIS_LABEL = { partnere: 'Partnere', utvalgte: 'Utvalgte', alle: 'Al
 export function Missing({ what = 'siden' }: { what?: string }) {
   return (
     <Page title="Ikke funnet" back>
-      <Empty title={`Fant ikke ${what}`} text="Den kan være fjernet, eller du har ikke tilgang med denne brukeren.">
+      <Empty icon="search" title={`Fant ikke ${what}`} text="Den kan være fjernet, eller du har ikke tilgang med denne brukeren.">
         <Btn to="/">Til forsiden</Btn>
       </Empty>
     </Page>
   )
 }
 
-// Skallet (App) eier arket for visningsbytte. Skjermene åpner det herfra.
+// Skallet (App) eier arket for visningsbytte og søket. Skjermene åpner dem herfra.
 let opener: () => void = () => undefined
-export const shell = { setOpener(f: () => void) { opener = f }, openViews() { opener() } }
+let searcher: () => void = () => undefined
+export const shell = {
+  setOpener(f: () => void) { opener = f }, openViews() { opener() },
+  setSearch(f: () => void) { searcher = f }, openSearch() { searcher() },
+}
 
-/** Varselbjelle og visningsbytte øverst på hovedskjermene. */
+/** Søk, varsler og visningsbytte øverst på hovedskjermene. På PC ligger de samme valgene i sidemenyen. */
 export function TopActions() {
   const s = useS(), me = useMe()
   const unread = myNotes(s, me).filter(n => !n.read).length
   return (
     <>
-      <button className="iconbtn" style={{ position: 'relative' }} aria-label={unread ? `Varsler, ${unread} uleste` : 'Varsler'} onClick={() => nav('/varsler')}>
-        <Icon name="bell" size={20} />{unread > 0 && <span className="dot">{unread}</span>}
+      <button className="iconbtn plain m-only" aria-label="Søk" onClick={() => shell.openSearch()}><Icon name="search" size={21} /></button>
+      <button className="iconbtn plain m-only" aria-label={unread ? `Varsler, ${unread} uleste` : 'Varsler'} onClick={() => nav('/varsler')}>
+        <Icon name="bell" size={21} />{unread > 0 && <span className="dot">{unread}</span>}
       </button>
-      <button className="viewbtn" onClick={() => shell.openViews()} aria-label={`Bytt visning. Nå: ${VIEW_LABEL[me.view]}`}><Icon name="swap" size={14} />{VIEW_LABEL[me.view].split(' ')[0]}</button>
+      <button className="mebtn m-only" onClick={() => shell.openViews()} aria-label={`${me.user.name}. Bytt visning. Nå: ${VIEW_LABEL[me.view]}`}><Avatar name={me.user.name} size={34} /><i className={me.view} /></button>
     </>
   )
 }

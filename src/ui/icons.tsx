@@ -45,13 +45,24 @@ const P: Record<string, string> = {
   home: 'M4 11l8-7 8 7v9h-5v-6h-6v6H4z',
   right: 'M9 5l7 7-7 7',
   spark: 'M12 3l1.800 5.200L19 10l-5.200 1.800L12 17l-1.800-5.200L5 10l5.200-1.800zM18.500 16l.700 2 .800.800-2 .700-.700 2-.700-2-2-.700 2-.700z',
-  handshake: 'M3 8l4-2 5 2 5-2 4 2v7l-4 2-5 3-5-3-4-2zM12 8v12',
+  handshake: 'M6 3h8l4 4v14H6zM14 3v4h4M9 14.500l2 2 4-4.500',
+  search: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4',
+  sun: 'M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4',
+  moon: 'M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5z',
+  auto: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z',
+  down: 'M6 9l6 6 6-6',
+  enter: 'M19 5v8H6M10 9l-4 4 4 4',
+  phone: 'M8 3h8v18H8zM11 18h2',
 }
 
-export function Icon({ name, size = 22, sw = 2, fill = false }: { name: string; size?: number; sw?: number; fill?: boolean }) {
+/** Fylte deler som legges oppå streken. */
+const SOLID: Record<string, string> = { auto: 'M12 3a9 9 0 0 1 0 18z' }
+
+export function Icon({ name, size = 22, sw = 1.9, fill = false }: { name: string; size?: number; sw?: number; fill?: boolean }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill={fill ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d={P[name] ?? P.info} />
+      {SOLID[name] && <path d={SOLID[name]} fill="currentColor" stroke="none" />}
     </svg>
   )
 }

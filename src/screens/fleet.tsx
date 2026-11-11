@@ -47,7 +47,7 @@ export function Park() {
       {!all.length && <Empty title="Parken er tom" text="Registrer det første objektet med et bilde, eller importer hele parken fra et regneark."><Btn kind="amber" to="/objekt/ny" icon="plus">Registrer objekt</Btn><Btn kind="ghost" to="/import" icon="upload">Importer fra regneark</Btn></Empty>}
       {all.length > 0 && <>
         {stale > 0 && me.company.alerts.stale && <Notice tone="warn" icon="clock">{stale} objekter er ikke bekreftet på over 90 dager. <button className="link" onClick={() => nav('/vask')}>Vask parken</button></Notice>}
-        <div className="hstack wrap">
+        <div className="actions">
           <Btn kind="amber" small icon="plus" to="/objekt/ny">Registrer</Btn>
           <Btn kind="quiet" small icon="upload" to="/import">Importer</Btn>
           <Btn kind="quiet" small icon="check" to="/vask">Vask parken</Btn>
@@ -113,10 +113,9 @@ export function ObjectCard({ id }: { id: string }) {
     if (err) toast(err, 'bad'); else toast(v === 'i_drift' ? 'Tatt ut av markedet' : v === 'leie' ? 'Merket ledig. Annonsen er laget fra objektkortet.' : 'Lagt ut for salg. Annonsen er laget fra objektkortet.', 'ok')
   }
   return (
-    <Page flush>
+    <Page flush back="/park" title={o.name}>
       <div className="hero">
         <ObjThumb o={o} />
-        <button className="iconbtn" aria-label="Tilbake" onClick={() => back('/park')}><Icon name="back" sw={2.5} size={20} /></button>
         <span className="bl"><StatusPill o={hiredRental ? { status: 'innleid' } : o} /></span>
         {o.photos.length > 1 && <span className="br"><Pill tone="glass">{o.photos.length} bilder</Pill></span>}
       </div>

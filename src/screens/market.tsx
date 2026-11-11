@@ -14,7 +14,7 @@ import { CompanyCard, FeeNote, Missing, Num, PlaceInput, TopActions, listingSrc,
 import { LeadSheet } from './share'
 
 type Hit = { l: Listing; o: Obj; score: number }
-function hits(s: State, me: Me, w = wishOf(s, me)): Hit[] {
+export function hits(s: State, me: Me, w = wishOf(s, me)): Hit[] {
   return s.listings
     .filter(l => l.active && l.companyId !== me.company.id && canSee(s, l, me.company.id))
     .map(l => { const o = ob(s, l.objId); return { l, o, score: o ? matchScore(w, l, o) : null } })
@@ -124,12 +124,11 @@ export function Maskin({ id }: { id: string }) {
     </div>
   )
   return (
-    <Page flush footer={own ? <Btn kind="amber" to={`/annonse/${l.id}`}>Rediger annonsen</Btn>
+    <Page flush back="/sveip" title={o.name} footer={own ? <Btn kind="amber" to={`/annonse/${l.id}`}>Rediger annonsen</Btn>
       : mine ? <Btn kind="amber" to={mine.rentalId ? `/leie/${mine.rentalId}` : mine.status === 'godkjent' ? `/match/${mine.id}` : '/mine'}>{mine.status === 'godkjent' ? 'Åpne samtalen' : 'Forespørselen venter på svar'}</Btn>
         : l.active ? <><button className={'iconbtn' + (isFav ? ' on' : '')} style={{ height: 48, width: 48 }} aria-label={isFav ? 'Fjern fra favoritter' : 'Lagre som favoritt'} onClick={() => toggleFav(l.id)}><Icon name="heart" size={20} fill={isFav} /></button><Btn kind="amber" onClick={() => setAskOpen(true)}>{l.mode === 'leie' ? 'Spør om leie' : 'Be om kontakt'}</Btn></> : undefined}>
       <div className="hero">
         <Thumb src={listingSrc(s, l, o)} type={o.type} alt={o.name} />
-        <button className="iconbtn" aria-label="Tilbake" onClick={() => back('/sveip')}><Icon name="back" sw={2.5} size={20} /></button>
         <span className="bl"><Pill tone="amber">{l.mode === 'leie' ? 'Til leie' : 'Til salgs'}</Pill></span>
         {score != null && <span className="br"><Pill tone="glass">{score} % match</Pill></span>}
       </div>

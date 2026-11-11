@@ -98,7 +98,7 @@ export function demoPhoto(type: ObjType, shape: string, label: string): string {
   ctx.fillStyle = '#3A5247'; ctx.fillRect(0, 372, 640, 108)
   drawShape(ctx, shape || TYPE_SHAPE[type].shape, 100, 108, 440)
   ctx.fillStyle = 'rgba(19,32,27,0.82)'; ctx.fillRect(0, 0, 640, 44)
-  ctx.fillStyle = '#F4F2EC'; ctx.font = '600 20px "Public Sans", Arial, sans-serif'; ctx.textBaseline = 'middle'
+  ctx.fillStyle = '#F4F2EC'; ctx.font = '600 20px Inter, Arial, sans-serif'; ctx.textBaseline = 'middle'
   ctx.fillText(`Demobilde · ${label}`, 16, 23)
   return cv.toDataURL('image/jpeg', 0.7)
 }
@@ -145,13 +145,13 @@ export async function rankCard(o: { rank: number; name: string; company: string;
   ctx.font = '600 74px Oswald, "Arial Narrow", Arial, sans-serif'
   ctx.fillStyle = '#F4F2EC'; ctx.fillText('TOPP', 60, 108)
   ctx.fillStyle = '#F2A33A'; ctx.fillText('100', 60 + ctx.measureText('TOPP ').width, 108)
-  ctx.font = '600 30px "Public Sans", Arial, sans-serif'; ctx.fillStyle = '#BFCBC3'; ctx.textAlign = 'right'
+  ctx.font = '600 30px Inter, Arial, sans-serif'; ctx.fillStyle = '#BFCBC3'; ctx.textAlign = 'right'
   ctx.fillText('PlanM8', S - 60, 104); ctx.textAlign = 'left'
   ctx.fillStyle = '#F2A33A'; ctx.font = '600 150px Oswald, "Arial Narrow", Arial, sans-serif'
   ctx.fillText(`Nr. ${o.rank}`, 60, 930)
-  ctx.fillStyle = '#F4F2EC'; ctx.font = '700 46px "Public Sans", Arial, sans-serif'
+  ctx.fillStyle = '#F4F2EC'; ctx.font = '700 46px Inter, Arial, sans-serif'
   ctx.fillText(`Min maskin er nr. ${o.rank} i Norge`, 60, 995)
-  ctx.fillStyle = '#BFCBC3'; ctx.font = '400 32px "Public Sans", Arial, sans-serif'
+  ctx.fillStyle = '#BFCBC3'; ctx.font = '400 32px Inter, Arial, sans-serif'
   ctx.fillText(`${o.name} · ${o.company} · av ${o.total} maskiner`.slice(0, 62), 60, 1044)
   return new Promise(resolve => cv.toBlob(b => resolve(b ?? new Blob()), 'image/png'))
 }

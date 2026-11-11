@@ -214,7 +214,7 @@ export function Presentation({ token }: { token: string }) {
   const dead = !sh || !o ? 'Lenken finnes ikke i denne nettleseren. Demoen lagrer data lokalt, så en presentasjon kan bare åpnes der den ble laget.'
     : sh.revoked ? 'Avsenderen har trukket tilbake presentasjonen.' : expired ? 'Lenken er utløpt. Be avsenderen om en ny.' : null
   if (dead || !sh || !o) {
-    return <div className="login"><Wordmark a="Plan" tone="plain" size={36} /><Empty title="Presentasjonen er ikke tilgjengelig" text={dead ?? ''}><Btn kind="amber" onClick={() => nav('/', true)}>Til PlanM8</Btn></Empty></div>
+    return <div className="login-pres"><Wordmark a="Plan" tone="plain" size={32} /><Empty icon="lock" title="Presentasjonen er ikke tilgjengelig" text={dead ?? ''}><Btn kind="amber" onClick={() => nav('/', true)}>Til PlanM8</Btn></Empty></div>
   }
   const c = co(s, sh.companyId)!
   const needCode = sh.access === 'full' && !unlocked && !own
@@ -226,7 +226,7 @@ export function Presentation({ token }: { token: string }) {
     if (listing) nav(`/maskin/${listing.id}?t=${listing.linkToken}`); else toast(`Ta kontakt med ${c.name} for ${sh.cta === 'leie' ? 'leie' : 'pris'}`)
   }
   return (
-    <div className="login">
+    <div className="login-pres">
       <div className="hstack between"><Wordmark a="Plan" tone="plain" size={30} />{me && <Btn kind="ghost" small onClick={() => nav(own ? `/send/${o.id}` : '/', true)}>Tilbake til appen</Btn>}</div>
       {own && <Notice tone="plain" icon="eye">Slik ser mottakeren presentasjonen. Åpninger fra deg selv telles ikke.</Notice>}
       {needCode ? (

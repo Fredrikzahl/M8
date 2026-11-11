@@ -1,12 +1,14 @@
 import { Component, useEffect, useState, type ReactNode } from 'react'
 import type { View } from './types'
 import { meOf, useS, viewsFor, type Me } from './store'
-import { match, nav, useRoute } from './router'
+import { match, nav, navRoot, useRoute } from './router'
 import { myNotes, setView } from './actions'
 import { PLACE_NAMES, VIEW_LABEL, VIEW_SUB } from './lib/util'
-import { Avatar, Btn, Dialogs, Empty, Page, Pill, Row, Sheet, Wordmark } from './ui/kit'
+import { Avatar, Btn, Dialogs, Empty, Field, Page, Pill, Row, Seg, Sheet, Wordmark } from './ui/kit'
 import { Icon } from './ui/icons'
 import { Missing, shell } from './screens/common'
+import { Palette } from './screens/search'
+import { setTheme, THEME_LABEL, useTheme, type ThemeMode } from './lib/theme'
 import { Bedrift, Demo, Login, Meldinger, Mer, Om, Varsler } from './screens/account'
 import { Forer, ImportObjects, ObjectCard, Park, QrPrint, QuickReport, RegisterObject, Skann, Vask } from './screens/fleet'
 import { Rapporter, Verksted } from './screens/workshop'
@@ -80,14 +82,25 @@ class Guard extends Component<{ children: ReactNode; k: string }, { err: boolean
   static getDerivedStateFromProps(p: { k: string }, s: { err: boolean; k: string }) { return p.k !== s.k ? { err: false, k: p.k } : null }
   render() {
     if (!this.state.err) return this.props.children
-    return <Page title="Noe gikk galt"><Empty title="Siden kunne ikke vises" text="Gå tilbake og prøv igjen. Hvis det gjentar seg, kan du nullstille demodataene under Mer."><Btn to="/">Til forsiden</Btn></Empty></Page>
+    return <Page title="Noe gikk galt"><Empty icon="warn" title="Siden kunne ikke vises" text="Gå tilbake og prøv igjen. Hvis det gjentar seg, kan du nullstille demodataene under Mer."><Btn to="/">Til forsiden</Btn></Empty></Page>
   }
 }
 
 export function App() {
   const s = useS(), path = useRoute(), me = meOf(s)
   const [viewsOpen, setViewsOpen] = useState(false)
-  useEffect(() => { shell.setOpener(() => setViewsOpen(true)) }, [])
+  const [search, setSearch] = useState(false)
+  const theme = useTheme()
+  useEffect(() => {
+    shell.setOpener(() => setViewsOpen(true)); shell.setSearch(() => setSearch(true))
+    // Ctrl K eller ⌘K åpner søket fra hvor som helst. Skråstrek gjør det samme når man ikke skriver i et felt.
+    const k = (e: KeyboardEvent) => {
+      const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target as HTMLElement)?.tagName ?? '')
+      if ((e.key === 'k' && (e.metaKey || e.ctrlKey)) || (e.key === '/' && !typing && !e.metaKey && !e.ctrlKey)) { e.preventDefault(); setSearch(x => !x) }
+    }
+    window.addEventListener('keydown', k)
+    return () => window.removeEventListener('keydown', k)
+  }, [])
   const rv = routeView(path)
   const mayView = me && rv ? viewsFor(me.roles).includes(rv) : true
   // Leieforhold og samtaler hører til den siden av saken brukeren står på.
@@ -106,7 +119,7 @@ export function App() {
   const real = path === '/' ? homeOf(me) : path
   let screen: ReactNode = null
   for (const [pat, f] of ROUTES) { const m = match(pat, real); if (m) { screen = f(m); break } }
-  if (!mayView && rv !== 'forer') screen = <Page title="Ingen tilgang" back><Empty title="Denne siden er ikke for din rolle" text={`Du er logget inn som ${me.user.name}. Bytt demobruker for å se denne delen av appen.`}><Btn to="/login">Bytt demobruker</Btn></Empty></Page>
+  if (!mayView && rv !== 'forer') screen = <Page title="Ingen tilgang" back><Empty icon="lock" title="Denne siden er ikke for din rolle" text={`Du er logget inn som ${me.user.name}. Bytt demobruker for å se denne delen av appen.`}><Btn to="/login">Bytt demobruker</Btn></Empty></Page>
 
   const tabs = tabsFor(me)
   const clean = real.split('?')[0]
@@ -117,41 +130,54 @@ export function App() {
         : p === '/partner' ? s.leads.filter(l => l.toCompanyId === me.company.id && l.status === 'sendt').length : 0
   const unread = myNotes(s, me).filter(n => !n.read).length
   const views = viewsFor(me.roles)
-  const go = (v: View) => { setView(v); nav(homeOf(me, v)); setViewsOpen(false) }
+  const go = (v: View) => { setView(v); navRoot(homeOf(me, v)); setViewsOpen(false) }
+  const mac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform ?? '')
+  const nextTheme: ThemeMode = theme === 'auto' ? 'light' : theme === 'light' ? 'dark' : 'auto'
+  const themeIcon = theme === 'auto' ? 'auto' : theme === 'light' ? 'sun' : 'moon'
 
   return (
-    <div className="app">
+    <div className="app" data-view={me.view}>
       <nav className="side" aria-label="Hovedmeny">
-        <Wordmark a="Plan" tone="plain" size={30} />
+        <div className="side-brand">
+          <Wordmark a="Plan" tone="amber" size={26} />
+          <button className="iconbtn plain small" aria-label={`Utseende: ${THEME_LABEL[theme]}. Bytt til ${THEME_LABEL[nextTheme].toLowerCase()}`} title={`Utseende: ${THEME_LABEL[theme]}`} onClick={() => setTheme(nextTheme)}><Icon name={themeIcon} size={17} /></button>
+        </div>
+        <button className="side-search" onClick={() => setSearch(true)}><Icon name="search" size={16} /><span>Søk</span><kbd>{mac ? '⌘K' : 'Ctrl K'}</kbd></button>
         {tabs.map(t => (
-          <button key={t.path} className="side-link" aria-current={active === t ? 'page' : undefined} onClick={() => nav(t.path)}>
-            <Icon name={t.icon} size={20} />{t.label}{badge(t.path) > 0 && <span className="dot">{badge(t.path)}</span>}
+          <button key={t.path} className="side-link" aria-current={active === t ? 'page' : undefined} onClick={() => navRoot(t.path)}>
+            <Icon name={t.icon} size={19} />{t.label}{badge(t.path) > 0 && <span className="dot">{badge(t.path)}</span>}
           </button>
         ))}
-        {views.length > 1 && <><div className="side-sep" /><p className="side-cap">Visning</p></>}
-        {views.length > 1 && views.map(v => <button key={v} className="side-link" aria-pressed={v === me.view} onClick={() => go(v)}><Icon name={v === me.view ? 'check' : 'right'} size={16} />{VIEW_LABEL[v]}</button>)}
+        {views.length > 1 && <><div className="side-sep" /><p className="side-cap">Visninger</p></>}
+        {views.length > 1 && views.map(v => (
+          <button key={v} className="side-link" aria-pressed={v === me.view} onClick={() => go(v)}>
+            <i className={'vdot ' + v} />{VIEW_LABEL[v]}{v === me.view && <span className="chk"><Icon name="check" size={16} sw={2.4} /></span>}
+          </button>
+        ))}
         <div className="side-foot">
-          <button className="side-link" onClick={() => nav('/varsler')}><Icon name="bell" size={20} />Varsler{unread > 0 && <span className="dot">{unread}</span>}</button>
-          <button className="side-link side-user" onClick={() => nav('/login')} aria-label="Bytt demobruker">
-            <Avatar name={me.user.name} size={36} /><span><b>{me.user.name}</b><small>{me.company.name}</small></span>
+          <button className="side-link" aria-current={clean === '/varsler' ? 'page' : undefined} onClick={() => nav('/varsler')}><Icon name="bell" size={19} />Varsler{unread > 0 && <span className="dot">{unread}</span>}</button>
+          <button className="side-link side-user" onClick={() => nav('/login')} aria-label={`${me.user.name}, ${me.company.name}. Bytt demobruker`}>
+            <Avatar name={me.user.name} size={34} /><span><b>{me.user.name}</b><small>{me.company.name}</small></span><Icon name="swap" size={16} />
           </button>
         </div>
       </nav>
       <main className="main"><Guard k={real}>{screen ?? <Missing />}</Guard></main>
       <nav className="tabs" aria-label="Hovedmeny">
         {tabs.map(t => (
-          <button key={t.path} className="tab" aria-current={active === t ? 'page' : undefined} onClick={() => nav(t.path)}>
-            <Icon name={t.icon} size={22} sw={active === t ? 2.4 : 2} /><span>{t.label}</span>{badge(t.path) > 0 && <span className="dot">{badge(t.path)}</span>}
+          <button key={t.path} className="tab" aria-current={active === t ? 'page' : undefined} onClick={() => navRoot(t.path)}>
+            <span className="tab-ic"><Icon name={t.icon} size={22} sw={active === t ? 2.2 : 1.9} />{badge(t.path) > 0 && <span className="dot">{badge(t.path)}</span>}</span><span>{t.label}</span>
           </button>
         ))}
       </nav>
       {viewsOpen && (
         <Sheet title="Bytt visning" onClose={() => setViewsOpen(false)}>
-          <p className="hint">Du er {me.user.name} hos {me.company.name}. Visningene følger rollene dine.</p>
+          <div className="hstack"><Avatar name={me.user.name} /><div className="grow"><b>{me.user.name}</b><p className="hint">{me.company.name}. Visningene følger rollene dine.</p></div></div>
           {views.map(v => <Row key={v} title={VIEW_LABEL[v]} sub={VIEW_SUB[v]} right={v === me.view ? <Pill tone="amber">Aktiv</Pill> : <Icon name="right" size={18} />} onClick={() => go(v)} />)}
-          <Btn kind="ghost" block icon="user" onClick={() => { setViewsOpen(false); nav('/login') }}>Bytt demobruker</Btn>
+          <Field label="Utseende"><Seg value={theme} onChange={setTheme} options={[['auto', 'Automatisk'], ['light', 'Lys'], ['dark', 'Mørk']]} /></Field>
+          <Btn kind="ghost" block icon="swap" onClick={() => { setViewsOpen(false); nav('/login') }}>Bytt demobruker</Btn>
         </Sheet>
       )}
+      {search && <Palette onClose={() => setSearch(false)} />}
       <Dialogs />{places}
     </div>
   )

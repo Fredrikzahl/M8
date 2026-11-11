@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type PointerEvent as RPointerEvent, type ReactNode } from 'react'
 import { Icon } from './icons'
 import { back, nav } from '../router'
 import { img } from '../lib/images'
@@ -16,21 +16,43 @@ export function Wordmark({ a, tone = 'amber', size = 26 }: { a: string; tone?: '
   return <span className="wordmark" style={{ fontSize: size }}>{a}<span className={'wm-' + tone}>M8</span></span>
 }
 
-export function Page(p: Kids & { title?: ReactNode; eyebrow?: string; sub?: ReactNode; back?: boolean | string; right?: ReactNode; tone?: 'light' | 'dark' | 'night'; wide?: boolean; footer?: ReactNode; brand?: ReactNode; flush?: boolean }) {
+/**
+ * Rammen rundt en skjerm. Toppfeltet står fast øverst. Den store tittelen ruller bort,
+ * og da får toppfeltet glassbakgrunn og en liten tittel. Med `flush` ligger toppfeltet over et toppbilde.
+ */
+export function Page(p: Kids & { title?: ReactNode; eyebrow?: string; sub?: ReactNode; back?: boolean | string; right?: ReactNode; tone?: 'light' | 'dark' | 'night'; wide?: boolean; footer?: ReactNode; brand?: ReactNode; flush?: boolean; short?: string }) {
+  const root = useRef<HTMLDivElement>(null), head = useRef<HTMLElement>(null), body = useRef<HTMLDivElement>(null), right = useRef<HTMLDivElement>(null)
+  const [stuck, setStuck] = useState(false)
+  const over = !!p.flush
+  const short = p.short ?? (typeof p.title === 'string' ? p.title : p.eyebrow)
+  useEffect(() => {
+    const el = over ? body.current?.firstElementChild : head.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(([e]) => setStuck(!e.isIntersecting), { rootMargin: '-58px 0px 0px 0px' })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [over])
+  // Den store tittelen på hovedsidene deler linje med knappene til høyre, og må vite hvor brede de er.
+  useLayoutEffect(() => { root.current?.style.setProperty('--right-w', (right.current?.offsetWidth ?? 0) + 'px') })
   return (
-    <div className={cx('screen', p.tone && p.tone !== 'light' && 'dark', p.tone === 'night' && 'night')}>
-      <header className="top">
-        <div className={cx('top-in', p.wide && 'wide')}>
-          {p.back && <button className="iconbtn" aria-label="Tilbake" onClick={() => back(typeof p.back === 'string' ? p.back : '/')}><Icon name="back" sw={2.5} size={20} /></button>}
-          <div className="top-title">
+    <div ref={root} className={cx('screen', p.tone && p.tone !== 'light' && 'dark', p.tone === 'night' && 'night')}>
+      <div className={cx('pnav', stuck && 'stuck', over && 'over')}>
+        <div className={cx('pnav-in', p.wide && 'wide')}>
+          {p.back && <button className="navbtn" aria-label="Tilbake" onClick={() => back(typeof p.back === 'string' ? p.back : '/')}><Icon name="back" sw={2.2} size={22} /></button>}
+          <div className="pnav-title" aria-hidden="true">{short}</div>
+          <div className="pnav-right" ref={right}>{p.right}</div>
+        </div>
+      </div>
+      {!over && (
+        <header ref={head} className={cx('phead', !p.back && 'root')}>
+          <div className={cx('phead-in', p.wide && 'wide')}>
             {p.eyebrow && <p className="eyebrow">{p.eyebrow}</p>}
             {p.brand ?? <h1>{p.title}</h1>}
+            {p.sub && <p className="top-sub">{p.sub}</p>}
           </div>
-          {p.right && <div className="top-right">{p.right}</div>}
-        </div>
-        {p.sub && <div className={cx('top-in', p.wide && 'wide')}><p className="top-sub">{p.sub}</p></div>}
-      </header>
-      <div className={cx('page', p.wide && 'wide', p.flush && 'flush')}>{p.children}</div>
+        </header>
+      )}
+      <div ref={body} className={cx('page', p.wide && 'wide', p.flush && 'flush')}>{p.children}</div>
       {p.footer && <footer className="bar"><div className={cx('bar-in', p.wide && 'wide')}>{p.footer}</div></footer>}
     </div>
   )
@@ -88,15 +110,20 @@ export const Stat = ({ label, value, tone }: { label: string; value: ReactNode; 
 export const KV = ({ rows }: { rows: [string, ReactNode][] }) => (
   <dl className="kv">{rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
 )
-export const Empty = ({ title, text, children }: Kids & { title: string; text?: string }) => (
-  <div className="empty"><h2>{title}</h2>{text && <p>{text}</p>}{children}</div>
+export const Empty = ({ title, text, children, icon = 'box' }: Kids & { title: string; text?: string; icon?: string }) => (
+  <div className="empty"><div className="empty-ic"><Icon name={icon} size={26} /></div><h2>{title}</h2>{text && <p>{text}</p>}{children}</div>
 )
 export const Notice = ({ tone = 'info', children, icon }: Kids & { tone?: 'info' | 'ok' | 'warn' | 'bad' | 'plain'; icon?: string }) => (
   <div className={'notice ' + tone}>{icon && <Icon name={icon} size={18} />}<div>{children}</div></div>
 )
 export const AiTag = ({ text = 'Simulert AI' }: { text?: string }) => <span className="aitag"><Icon name="spark" size={13} />{text}</span>
 export const Bar = ({ pct, tone }: { pct: number; tone?: string }) => <div className="pbar"><div className={tone} style={{ width: Math.max(0, Math.min(100, pct)) + '%' }} /></div>
-export const Avatar = ({ name, size = 44 }: { name: string; size?: number }) => <div className="avatar" style={{ width: size, height: size, fontSize: size * 0.36 }}>{initials(name)}</div>
+/** Initialer på en farget flate. Fargen følger navnet, slik at samme bedrift alltid ser lik ut. */
+export function Avatar({ name, size = 44 }: { name: string; size?: number }) {
+  let h = 0
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0
+  return <div className={'avatar c' + (h % 5)} style={{ width: size, height: size, fontSize: size * 0.36 }}>{initials(name)}</div>
+}
 
 export function Stars({ value, n }: { value: number | null; n?: number }) {
   return <span className="stars"><Icon name="star" size={14} fill />{value == null ? 'Ingen vurderinger' : value.toLocaleString('nb-NO', { minimumFractionDigits: 1 })}{n != null && value != null && <small> ({n})</small>}</span>
@@ -142,12 +169,24 @@ export function MiniMap({ points, height = 300 }: { points: { place: string; lab
   const kx = Math.cos((midLat * Math.PI) / 180)
   const spanLat = Math.max(1.2, pts.length ? Math.max(...lats) - Math.min(...lats) : 6) * 1.5
   const midLon = pts.length ? (Math.min(...lons) + Math.max(...lons)) / 2 : 14
-  const W = 600, H = height, scale = Math.min(H / spanLat, W / (Math.max(2, pts.length ? Math.max(...lons) - Math.min(...lons) : 8) * 1.5 * kx))
+  // Kartet tegnes i skjermens egne punkter, slik at tekst og merker har samme størrelse på mobil og PC.
+  const box = useRef<HTMLDivElement>(null)
+  const [W, setW] = useState(600)
+  useLayoutEffect(() => {
+    const el = box.current
+    if (!el) return
+    const fit = () => { const w = Math.round(el.clientWidth); if (w > 0) setW(Math.max(280, w)) }
+    fit()
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(fit); ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  const H = height, scale = Math.min(H / spanLat, W / (Math.max(2, pts.length ? Math.max(...lons) - Math.min(...lons) : 8) * 1.5 * kx))
   const proj = (lat: number, lon: number): [number, number] => [W / 2 + (lon - midLon) * kx * scale, H / 2 - (lat - midLat) * scale]
   const groups = new Map<string, typeof pts>()
   for (const p of pts) groups.set(p.place, [...(groups.get(p.place) ?? []), p])
   return (
-    <div className="map">
+    <div className="map" ref={box}>
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Forenklet kart over hvor objektene står">
         <rect width={W} height={H} className="map-sea" />
         <polygon points={NORWAY.map(([lon, lat]) => proj(lat, lon).join(',')).join(' ')} className="map-land" />
@@ -168,16 +207,70 @@ export function MiniMap({ points, height = 300 }: { points: { place: string; lab
 }
 
 // ---------- Ark, bekreftelse og beskjeder ----------
+const openSheets: symbol[] = []
+function lockScroll(on: boolean) { try { document.documentElement.classList.toggle('locked', on) } catch { /* ingen side */ } }
+
+/**
+ * Ark som kommer opp fra bunnen på mobil og vises som dialog på PC.
+ * Kan lukkes med kryss, Escape, trykk utenfor eller ved å dra det ned.
+ */
 export function Sheet({ title, onClose, children, footer }: Kids & { title: string; onClose: () => void; footer?: ReactNode }) {
+  const [closing, setClosing] = useState(false)
+  const [dy, setDy] = useState(0)
+  const el = useRef<HTMLDivElement>(null)
+  const latest = useRef(onClose); latest.current = onClose
+  const timer = useRef<number | undefined>(undefined)
+  const drag = useRef<{ y: number; t: number } | null>(null)
+  const close = useCallback(() => {
+    if (timer.current != null) return
+    setClosing(true)
+    timer.current = window.setTimeout(() => latest.current(), 190)
+  }, [])
   useEffect(() => {
-    const k = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    const id = Symbol('ark')
+    const before = document.activeElement as HTMLElement | null
+    openSheets.push(id); lockScroll(true)
+    if (el.current && !el.current.contains(document.activeElement)) el.current.focus({ preventScroll: true })
+    const k = (e: KeyboardEvent) => {
+      if (openSheets[openSheets.length - 1] !== id) return
+      if (e.key === 'Escape') close()
+      if (e.key === 'Tab' && el.current) {
+        // Hold tastaturfokus inne i arket.
+        const f = [...el.current.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')].filter(x => !x.hasAttribute('disabled') && x.offsetParent !== null)
+        if (!f.length) return
+        const first = f[0], last = f[f.length - 1], cur = document.activeElement
+        if (e.shiftKey && (cur === first || cur === el.current)) { e.preventDefault(); last.focus() }
+        else if (!e.shiftKey && cur === last) { e.preventDefault(); first.focus() }
+      }
+    }
     window.addEventListener('keydown', k)
-    return () => window.removeEventListener('keydown', k)
-  }, [onClose])
+    return () => {
+      window.removeEventListener('keydown', k)
+      window.clearTimeout(timer.current)
+      const i = openSheets.indexOf(id); if (i >= 0) openSheets.splice(i, 1)
+      lockScroll(openSheets.length > 0)
+      try { before?.focus({ preventScroll: true }) } catch { /* elementet finnes ikke lenger */ }
+    }
+  }, [close])
+  const down = (e: RPointerEvent) => {
+    if (window.innerWidth >= 700 || (e.target as HTMLElement).closest('button')) return
+    drag.current = { y: e.clientY, t: Date.now() }
+    try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId) } catch { /* ikke støttet */ }
+  }
+  const move = (e: RPointerEvent) => { if (drag.current) setDy(Math.max(0, e.clientY - drag.current.y)) }
+  const up = (e: RPointerEvent) => {
+    const d = drag.current; if (!d) return
+    drag.current = null
+    const dist = Math.max(0, e.clientY - d.y), speed = dist / Math.max(1, Date.now() - d.t)
+    if (dist > 120 || (dist > 36 && speed > 0.6)) close(); else setDy(0)
+  }
+  const grip = { onPointerDown: down, onPointerMove: move, onPointerUp: up, onPointerCancel: up }
   return (
-    <div className="sheet-back" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="sheet" role="dialog" aria-modal="true" aria-label={title}>
-        <div className="sheet-h"><h2>{title}</h2><button className="iconbtn" aria-label="Lukk" onClick={onClose}><Icon name="close" size={18} /></button></div>
+    <div className={cx('sheet-back', closing && 'closing')} onClick={e => { if (e.target === e.currentTarget) close() }}>
+      <div ref={el} className="sheet" role="dialog" aria-modal="true" aria-label={title} tabIndex={-1}
+        style={dy ? { transform: `translateY(${dy}px)`, transition: drag.current ? 'none' : undefined } : { transition: 'transform .3s var(--spring)' }}>
+        <div className="sheet-grab" {...grip} aria-hidden="true" />
+        <div className="sheet-h" {...grip}><h2>{title}</h2><button className="iconbtn" aria-label="Lukk" onClick={close}><Icon name="close" size={16} sw={2.4} /></button></div>
         <div className="sheet-b">{children}</div>
         {footer && <div className="sheet-f">{footer}</div>}
       </div>
@@ -208,7 +301,9 @@ export function Dialogs() {
           <p className="lead">{u.ask.text}</p>
         </Sheet>
       )}
-      <div className="toasts" aria-live="polite">{u.toasts.map(t => <div key={t.id} className={'toast ' + (t.tone ?? '')}>{t.text}</div>)}</div>
+      <div className="toasts" aria-live="polite">
+        {u.toasts.map(t => <div key={t.id} className={cx('toast', t.tone, t.text.length > 46 && 'long')}><Icon name={t.tone === 'ok' ? 'check' : t.tone === 'bad' ? 'warn' : 'info'} size={18} sw={2.3} />{t.text}</div>)}
+      </div>
     </>
   )
 }

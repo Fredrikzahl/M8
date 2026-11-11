@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { Coverage, FeeModel, Role } from '../types'
-import { Avatar, Btn, Card, Chips, Empty, Field, KV, Notice, Page, Pill, Row, Section, Seg, Stars, Toggle, Wordmark, ask, toast } from '../ui/kit'
+import { Avatar, Btn, Card, Chips, Empty, Field, KV, Notice, Page, Pill, Row, Section, Seg, Sheet, Stars, Toggle, Wordmark, ask, toast } from '../ui/kit'
 import { Icon } from '../ui/icons'
 import { back, nav } from '../router'
 import { co, coName, isAdmin, meOf, ratingOf, store, useMe, useS, userName, viewsFor } from '../store'
@@ -11,6 +11,8 @@ import {
 import { COVERAGE_LABEL, fmtDate, PARTNER_LABEL, rel, ROLE_LABEL, today, addDays, dateOnly, now } from '../lib/util'
 import { FEE_LABEL } from '../lib/logic'
 import { saveFile } from '../lib/files'
+import { setTheme, useTheme } from '../lib/theme'
+import { promptInstall, useInstall } from '../lib/install'
 import { CompanyCard, Num, PlaceInput, TopActions } from './common'
 
 const BLURB: Record<string, string> = {
@@ -50,14 +52,24 @@ export function Login() {
   }
   return (
     <div className="login">
-      <div className="hstack between"><Wordmark a="Plan" tone="plain" size={40} />{me && <Btn kind="ghost" small onClick={() => back('/')}>Tilbake</Btn>}</div>
-      <div className="stack s">
-        <h1>Parken, markedet og frakten i samme app</h1>
-        <p className="muted">FleetM8 holder orden på maskinene. SaleM8 leier ut og selger dem. LogM8 frakter dem.</p>
+      <div className="login-hero">
+        <div className="hstack between"><Wordmark a="Plan" tone="plain" size={34} />{me && <Btn kind="ghost" small onClick={() => back('/')}>Tilbake</Btn>}</div>
+        <div className="stack">
+          <h1>Parken, markedet og frakten i samme app</h1>
+          <p className="lead">Én plass for maskinene dine, fra daglig drift til utleie, salg og transport.</p>
+        </div>
+        <div className="login-pillars">
+          <div><i className="g"><Icon name="grid" size={18} /></i><span><b>FleetM8</b>Holder orden på maskinene, service og verksted.</span></div>
+          <div><i className="a"><Icon name="tag" size={18} /></i><span><b>SaleM8</b>Leier ut og selger, med trygg utlevering og retur.</span></div>
+          <div><i className="b"><Icon name="truck" size={18} /></i><span><b>LogM8</b>Frakter maskinene, med bud fra transportører.</span></div>
+        </div>
       </div>
-      <Notice tone="plain" icon="info">Dette er en demo som lagrer alt i denne nettleseren. Bedrifter, personer og tall er oppdiktet. Velg en bruker for å se appen fra den siden.</Notice>
+      <div className="login-body">
       <div className="stack">
-        <h2>Velg demobruker</h2>
+        <div className="stack s">
+          <h2>Velg demobruker</h2>
+          <p className="hint">Dette er en demo som lagrer alt i denne nettleseren. Bedrifter, personer og tall er oppdiktet. Velg en bruker for å se appen fra den siden.</p>
+        </div>
         {users.map(u => {
           const c = co(s, u.memberships[0].companyId)
           return (
@@ -88,6 +100,7 @@ export function Login() {
           </Card>
         )}
       </div>
+      </div>
     </div>
   )
 }
@@ -96,6 +109,12 @@ export function Mer() {
   const s = useS(), me = useMe()
   const unread = myNotes(s, me).filter(n => !n.read).length
   const threads = s.requests.filter(r => r.status === 'godkjent' && (r.fromCompanyId === me.company.id || r.toCompanyId === me.company.id)).length
+  const theme = useTheme(), install = useInstall()
+  const [how, setHow] = useState(false)
+  const doInstall = async () => {
+    if (install !== 'ready') return setHow(true)
+    if (await promptInstall()) toast('PlanM8 er installert', 'ok')
+  }
   const link = (to: string, icon: string, title: string, sub: string, right?: React.ReactNode) =>
     <Row key={to} to={to} thumb={<span className="taskicon"><Icon name={icon} size={20} /></span>} title={title} sub={sub} right={right ?? <Icon name="right" size={18} />} />
   return (
@@ -115,6 +134,26 @@ export function Mer() {
         {link('/demo', 'spark', 'Demo-innstillinger', 'Gebyrmodell, nullstilling og eksport')}
         {link('/om', 'info', 'Om denne versjonen', 'Hva som virker, og hva som er simulert')}
       </div>
+      <Section title="Appen">
+        <Card>
+          <Field label="Utseende"><Seg value={theme} onChange={setTheme} options={[['auto', 'Automatisk'], ['light', 'Lys'], ['dark', 'Mørk']]} /></Field>
+          {install === 'installed' && <p className="hint">PlanM8 er installert som app på denne enheten.</p>}
+          {(install === 'ready' || install === 'ios' || install === 'manual') && (
+            <div className="hstack between">
+              <div className="grow"><b>Installer som app</b><p className="hint">Få PlanM8 på hjemskjermen, uten adresselinje.</p></div>
+              <Btn kind="quiet" small icon="phone" onClick={doInstall}>Installer</Btn>
+            </div>
+          )}
+        </Card>
+      </Section>
+      {how && (
+        <Sheet title="Installer PlanM8" onClose={() => setHow(false)} footer={<Btn kind="primary" onClick={() => setHow(false)}>Ok</Btn>}>
+          {install === 'ios'
+            ? <ol className="steps"><li>Trykk på Del nederst i Safari.</li><li>Velg «Legg til på Hjem-skjerm».</li><li>Trykk Legg til. PlanM8 ligger nå som en app på hjemskjermen.</li></ol>
+            : <ol className="steps"><li>Åpne menyen i nettleseren, eller se etter installer-ikonet i adresselinja.</li><li>Velg «Installer PlanM8» eller «Legg til på startskjermen».</li><li>Bekreft. PlanM8 åpnes nå i sitt eget vindu.</li></ol>}
+          <p className="hint">Dataene dine følger med, fordi de ligger i denne nettleseren.</p>
+        </Sheet>
+      )}
     </Page>
   )
 }
@@ -293,6 +332,7 @@ export function Om() {
     'Frakt med bud, heng på bil, ledig på tur, løyvekontroll og dokumentasjon ved henting og levering',
     'Blinkskudd, Topp 100 med ratingmodus, kategorier, delebilde og vinnervegg',
     '«Send maskin» med tilgangsnivå, utløp og sporing, og leads til leverandører',
+    'Søk og hurtigkommandoer, lys og mørk modus, og installering som egen app',
   ]
   const sim = [
     ['Innlogging', 'Du velger en demobruker. Vipps, BankID og engangskode er ikke koblet til.'],

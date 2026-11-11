@@ -22,7 +22,7 @@ export function Verksted() {
   return (
     <Page title="Verksted" eyebrow="FleetM8" right={<TopActions />} wide sub="Beskjeder fra førere og automatiske oppgaver for service og EU-kontroll.">
       {blocked.length > 0 && <Notice tone="bad" icon="lock">Sperret for utleie til feilen er løst: {blocked.map(id => ob(s, id)?.name).join(', ')}.</Notice>}
-      <Seg value={tab} onChange={setTab} options={[['ny', `Nye (${n('ny')})`], ['arbeid', `Under arbeid (${n('arbeid')})`], ['utfort', `Utført (${n('utfort')})`]]} />
+      <Seg value={tab} onChange={setTab} options={[['ny', `Nye · ${n('ny')}`], ['arbeid', `Pågår · ${n('arbeid')}`], ['utfort', `Utført · ${n('utfort')}`]]} />
       {!list.length && <Empty title={tab === 'ny' ? 'Ingen nye oppgaver' : tab === 'arbeid' ? 'Ingenting under arbeid' : 'Ingen utførte oppgaver'} text="Førere melder fra ved å skanne QR-koden på maskinen." />}
       <div className="cols">
         {list.map(t => {

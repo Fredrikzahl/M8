@@ -3,12 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#13201B">
+<meta name="theme-color" content="#F6F5F1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0C120F" media="(prefers-color-scheme: dark)">
+<meta name="description" content="PlanM8: parken, markedet og frakten i samme app.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PlanM8">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>PlanM8</title>
 <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<link rel="manifest" href="./manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Public+Sans:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&family=Oswald:wght@500;600&display=swap">
+<!-- Valgt utseende settes før appen tegnes, slik at siden ikke blinker i feil modus. -->
+<script>try{var t=localStorage.getItem('m8-tema');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+<style>html{background:#F6F5F1}@media (prefers-color-scheme:dark){html:not([data-theme=light]){background:#0C120F}}html[data-theme=dark]{background:#0C120F}</style>
 </head>
 <body>
 <div id="root"></div>

@@ -1,0 +1,23 @@
+{
+  "name": "PlanM8",
+  "short_name": "PlanM8",
+  "description": "Parken, markedet og frakten i samme app.",
+  "lang": "nb",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#F6F5F1",
+  "theme_color": "#13201B",
+  "categories": ["business", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Parken", "url": "./#/park" },
+    { "name": "Markedet", "url": "./#/sveip" },
+    { "name": "Bestill frakt", "url": "./#/frakt/send" }
+  ]
+}

@@ -40,7 +40,7 @@ export function FraktSend() {
       <Field label="Hva skal fraktes?"><input value={f.title} onChange={e => up({ title: e.target.value })} placeholder="For eksempel «Minigraver 3 t»" /></Field>
       <Field label="Type last"><Seg tone="blue" value={f.cargo} onChange={v => up({ cargo: v })} options={[...CARGO]} /></Field>
       <div className="grid2"><Field label="Fra"><PlaceInput value={f.fromPlace} onChange={v => up({ fromPlace: v })} label="Fra" /></Field><Field label="Til"><PlaceInput value={f.toPlace} onChange={v => up({ toPlace: v })} label="Til" /></Field></div>
-      <div className="grid2"><Field label="Vekt i kg"><Num value={f.weightKg || null} onChange={v => up({ weightKg: v })} /></Field><Field label="Når"><input type="datetime-local" value={f.when} onChange={e => up({ when: e.target.value })} /></Field></div>
+      <div className="grid2 r"><Field label="Vekt i kg"><Num value={f.weightKg || null} onChange={v => up({ weightKg: v })} /></Field><Field label="Når"><input type="datetime-local" value={f.when} onChange={e => up({ when: e.target.value })} /></Field></div>
       <Field label="Krav til bilen"><Chips value={reqs} options={(Object.keys(REQ_LABEL) as JobReq[]).map(k => [k, REQ_LABEL[k]] as [JobReq, string])} onChange={v => up({ reqs: v })} /></Field>
       {f.weightKg > 3500 && <p className="hint">Over 3,5 tonn krever løyve. Bare transportører med registrert løyve og godsansvar får gi bud.</p>}
       {f.fromPlace && f.toPlace && <p className="hint">{f.fromPlace} til {f.toPlace}: {kmText(f.fromPlace, f.toPlace)}.</p>}
