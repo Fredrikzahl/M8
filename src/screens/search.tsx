@@ -88,8 +88,12 @@ export function Palette({ onClose }: { onClose: () => void }) {
   useEffect(() => { setSel(0) }, [q])
   useEffect(() => { list.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' }) }, [sel])
   useEffect(() => {
+    const before = document.activeElement as HTMLElement | null
     document.documentElement.classList.add('locked')
-    return () => { if (!document.querySelector('.sheet-back')) document.documentElement.classList.remove('locked') }
+    return () => {
+      if (!document.querySelector('.sheet-back')) document.documentElement.classList.remove('locked')
+      try { if (before?.isConnected) before.focus({ preventScroll: true }) } catch { /* elementet finnes ikke lenger */ }
+    }
   }, [])
 
   const run = (i?: Item) => { if (!i) return; onClose(); i.run() }
@@ -98,6 +102,12 @@ export function Palette({ onClose }: { onClose: () => void }) {
     else if (e.key === 'ArrowUp') { e.preventDefault(); setSel(x => Math.max(0, x - 1)) }
     else if (e.key === 'Enter') { e.preventDefault(); run(shown[sel]) }
     else if (e.key === 'Escape') { e.preventDefault(); onClose() }
+    else if (e.key === 'Tab') {
+      // Hold tastaturfokus inne i søket. Treffene velges med piltastene.
+      const f = [...e.currentTarget.querySelectorAll<HTMLElement>('input, .pal-top button')]
+      const at = f.indexOf(document.activeElement as HTMLElement)
+      e.preventDefault(); f[(at + (e.shiftKey ? f.length - 1 : 1)) % f.length]?.focus()
+    }
   }
   let last = ''
   return (
@@ -115,7 +125,7 @@ export function Palette({ onClose }: { onClose: () => void }) {
             return (
               <div key={i.id}>
                 {cap}
-                <button className="pal-item" role="option" aria-selected={k === sel} onMouseMove={() => { if (k !== sel) setSel(k) }} onClick={() => run(i)}>
+                <button className="pal-item" role="option" tabIndex={-1} aria-selected={k === sel} onMouseMove={() => { if (k !== sel) setSel(k) }} onClick={() => run(i)}>
                   <span className="pal-ic">{i.thumb ?? <Icon name={i.icon ?? 'right'} size={17} />}</span>
                   <span><b>{i.title}</b>{i.sub && <small>{i.sub}</small>}</span>
                   <span className="pal-go"><Icon name="enter" size={16} /></span>

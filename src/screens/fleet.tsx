@@ -3,7 +3,7 @@ import type { LeadType, Obj, ObjStatus, ObjType, Photo, TaskType } from '../type
 import { AiTag, Bar, Btn, Card, Chips, Empty, Field, KV, MiniMap, Notice, ObjThumb, Page, Pill, Row, Section, Seg, Sheet, Stat, Thumb, ask, toast } from '../ui/kit'
 import { GuidedCamera, PhotoField, QrSvg } from '../ui/widgets'
 import { Icon } from '../ui/icons'
-import { back, nav, useRoute } from '../router'
+import { back, link, nav, useRoute } from '../router'
 import { activeRental, coName, isAdmin, ob, openFault, parkOf, useMe, useS, userName } from '../store'
 import { addDoc, addObjPhoto, addObject, importObjects, reportTask, setAvailability, updateObject, washConfirm, washFinish, washStart, type NewObj } from '../actions'
 import { daysBetween, fmtDate, meterUnit, num, OBJ_TYPES, parseCsv, parseNum, rel, STATUS_LABEL, STATUS_TONE, TASK_ICON, TASK_LABEL, toCsv, today, tonn } from '../lib/util'
@@ -46,7 +46,7 @@ export function Park() {
       </div>
       {!all.length && <Empty title="Parken er tom" text="Registrer det første objektet med et bilde, eller importer hele parken fra et regneark."><Btn kind="amber" to="/objekt/ny" icon="plus">Registrer objekt</Btn><Btn kind="ghost" to="/import" icon="upload">Importer fra regneark</Btn></Empty>}
       {all.length > 0 && <>
-        {stale > 0 && me.company.alerts.stale && <Notice tone="warn" icon="clock">{stale} objekter er ikke bekreftet på over 90 dager. <button className="link" onClick={() => nav('/vask')}>Vask parken</button></Notice>}
+        {stale > 0 && me.company.alerts.stale && <Notice tone="warn" icon="clock">{stale} objekter er ikke bekreftet på over 90 dager. <a className="link" {...link('/vask')}>Vask parken</a></Notice>}
         <div className="actions">
           <Btn kind="amber" small icon="plus" to="/objekt/ny">Registrer</Btn>
           <Btn kind="quiet" small icon="upload" to="/import">Importer</Btn>
@@ -125,11 +125,11 @@ export function ObjectCard({ id }: { id: string }) {
           <h1>{o.name}</h1>
           <p className="muted">{[o.make, o.model, o.year].filter(Boolean).join(' · ')}</p>
         </div>
-        {hiredRental && <Notice tone="info" icon="handshake">Innleid fra {coName(s, o.companyId)} til {fmtDate(hiredRental.to)}. <button className="link" onClick={() => nav(`/leie/${hiredRental.id}`)}>Åpne leieforholdet</button></Notice>}
+        {hiredRental && <Notice tone="info" icon="handshake">Innleid fra {coName(s, o.companyId)} til {fmtDate(hiredRental.to)}. <a className="link" {...link(`/leie/${hiredRental.id}`)}>Åpne leieforholdet</a></Notice>}
         {o.archived && <Notice tone="plain" icon="lock">Arkivert {fmtDate(o.archived.at, true)}: {o.archived.reason.toLowerCase()}{o.archived.soldTo ? ` til ${o.archived.soldTo}` : ''}. Kortet kan ikke endres.</Notice>}
         {o.transferNote && <Notice tone="info" icon="info">{o.transferNote}</Notice>}
-        {fault && <Notice tone="bad" icon="warn">Åpen feil: {fault.title.replace(/[.\s]+$/, "")}. Objektet er sperret for utleie til feilen er løst. <button className="link" onClick={() => nav('/verksted')}>Se oppgaven</button></Notice>}
-        {own && rental && <Notice tone="ok" icon="handshake">{rental.status === 'utlevert' ? 'Utleid til' : 'Avtalt leie med'} {coName(s, rental.lesseeId)}, {fmtDate(rental.from)} til {fmtDate(rental.to)}. <button className="link" onClick={() => nav(`/leie/${rental.id}`)}>Åpne leieforholdet</button></Notice>}
+        {fault && <Notice tone="bad" icon="warn">Åpen feil: {fault.title.replace(/[.\s]+$/, "")}. Objektet er sperret for utleie til feilen er løst. <a className="link" {...link('/verksted')}>Se oppgaven</a></Notice>}
+        {own && rental && <Notice tone="ok" icon="handshake">{rental.status === 'utlevert' ? 'Utleid til' : 'Avtalt leie med'} {coName(s, rental.lesseeId)}, {fmtDate(rental.from)} til {fmtDate(rental.to)}. <a className="link" {...link(`/leie/${rental.id}`)}>Åpne leieforholdet</a></Notice>}
 
         {own && !o.archived && admin && (
           <Card>
@@ -538,8 +538,8 @@ export function Forer() {
   return (
     <Page title={`Hei, ${me.user.name.split(' ')[0]}`} eyebrow={me.company.name} right={<TopActions />}>
       <div className="grid2">
-        <button className="bigbtn" onClick={() => nav('/skann')}><span className="taskicon"><Icon name="qr" size={22} /></span><b>Skann QR</b><small>Meld feil, flytting eller service</small></button>
-        <button className="bigbtn" onClick={() => nav('/blinkskudd')}><span className="taskicon"><Icon name="camera" size={22} /></span><b>Blinkskudd</b><small>Ta bilde til Topp 100</small></button>
+        <a className="bigbtn" {...link('/skann')}><span className="taskicon"><Icon name="qr" size={22} /></span><b>Skann QR</b><small>Meld feil, flytting eller service</small></a>
+        <a className="bigbtn" {...link('/blinkskudd')}><span className="taskicon"><Icon name="camera" size={22} /></span><b>Blinkskudd</b><small>Ta bilde til Topp 100</small></a>
       </div>
       <Section title="Mine maskiner">
         {!mine.length && <p className="hint">Du står ikke som ansvarlig for noen maskiner. Skann QR-koden på maskinen du bruker.</p>}

@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type PointerEvent as RPointerEvent, type ReactNode } from 'react'
+import { cloneElement, isValidElement, useCallback, useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type MouseEvent as RMouseEvent, type PointerEvent as RPointerEvent, type ReactElement, type ReactNode } from 'react'
 import { Icon } from './icons'
-import { back, nav } from '../router'
+import { back, link, nav } from '../router'
 import { img } from '../lib/images'
 import { NORWAY, SHAPES, TYPE_SHAPE } from '../lib/shapes'
 import { coords, initials } from '../lib/util'
@@ -14,6 +14,21 @@ const cx = (...a: (string | false | undefined | null)[]) => a.filter(Boolean).jo
 // ---------- Side ----------
 export function Wordmark({ a, tone = 'amber', size = 26 }: { a: string; tone?: 'amber' | 'blue' | 'green' | 'plain'; size?: number }) {
   return <span className="wordmark" style={{ fontSize: size }}>{a}<span className={'wm-' + tone}>M8</span></span>
+}
+
+// Merket over tittelen viser hvilken del av appen siden hører til. Delene skrives som ordmerke med sin egen farge.
+const MARKS: Record<string, 'amber' | 'blue' | 'green'> = { PlanM8: 'amber', FleetM8: 'green', SaleM8: 'amber', LogM8: 'blue' }
+const upFirst = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
+/** Skilletegnet «·» holdes sammen med ordet foran, slik at en ny linje aldri begynner med en prikk. */
+const tie = (x: ReactNode) => (typeof x === 'string' ? x.replaceAll(' · ', '\u00A0· ') : x)
+export function Eyebrow({ text }: { text: string }) {
+  const [head, ...rest] = text.split(' · ')
+  const tail = rest.join(' · ')
+  const mark = MARKS[head]
+    ? <Wordmark a={head.slice(0, -2)} tone={MARKS[head]} size={17} />
+    : head === 'Topp 100' ? <span className="wordmark tmark">Topp <span className="wm-amber">100</span></span> : null
+  if (!mark) return <p className="eyebrow">{tie(text)}</p>
+  return <p className="eyebrow brand">{mark}{tail && <span>{upFirst(tail)}</span>}</p>
 }
 
 /**
@@ -34,6 +49,8 @@ export function Page(p: Kids & { title?: ReactNode; eyebrow?: string; sub?: Reac
   }, [over])
   // Den store tittelen på hovedsidene deler linje med knappene til høyre, og må vite hvor brede de er.
   useLayoutEffect(() => { root.current?.style.setProperty('--right-w', (right.current?.offsetWidth ?? 0) + 'px') })
+  // Fanen i nettleseren får sidens navn, slik at historikk, bokmerker og skjermlesere vet hvor man er.
+  useEffect(() => { try { document.title = short ? `${short} – PlanM8` : 'PlanM8' } catch { /* ingen side */ } }, [short])
   return (
     <div ref={root} className={cx('screen', p.tone && p.tone !== 'light' && 'dark', p.tone === 'night' && 'night')}>
       <div className={cx('pnav', stuck && 'stuck', over && 'over')}>
@@ -46,8 +63,10 @@ export function Page(p: Kids & { title?: ReactNode; eyebrow?: string; sub?: Reac
       {!over && (
         <header ref={head} className={cx('phead', !p.back && 'root')}>
           <div className={cx('phead-in', p.wide && 'wide')}>
-            {p.eyebrow && <p className="eyebrow">{p.eyebrow}</p>}
-            {p.brand ?? <h1>{p.title}</h1>}
+            <div className="phead-t">
+              {p.eyebrow && <Eyebrow text={p.eyebrow} />}
+              {p.brand ?? <h1>{p.title}</h1>}
+            </div>
             {p.sub && <p className="top-sub">{p.sub}</p>}
           </div>
         </header>
@@ -63,28 +82,30 @@ export const Card = ({ children, className, onClick, style }: Kids & { className
   onClick ? <button className={cx('card card-btn', className)} onClick={onClick} style={style}>{children}</button> : <div className={cx('card', className)} style={style}>{children}</div>
 
 export function Btn(p: Kids & { kind?: 'primary' | 'amber' | 'blue' | 'ghost' | 'danger' | 'quiet'; onClick?: () => void; block?: boolean; small?: boolean; disabled?: boolean; icon?: string; to?: string; label?: string }) {
-  return (
-    <button className={cx('btn', p.kind ?? 'primary', p.block && 'block', p.small && 'small')} disabled={p.disabled} aria-label={p.label}
-      onClick={() => { if (p.to) nav(p.to); p.onClick?.() }}>
-      {p.icon && <Icon name={p.icon} size={p.small ? 16 : 18} />}{p.children}
-    </button>
-  )
+  const cls = cx('btn', p.kind ?? 'primary', p.block && 'block', p.small && 'small')
+  const body = <>{p.icon && <Icon name={p.icon} size={p.small ? 16 : 18} />}{p.children}</>
+  // En knapp som bare går til en annen side, er en lenke. Da virker også «åpne i ny fane».
+  if (p.to && !p.disabled) {
+    const l = link(p.to)
+    return <a className={cls} aria-label={p.label} href={l.href} onClick={(e: RMouseEvent) => { l.onClick(e); if (e.defaultPrevented) p.onClick?.() }}>{body}</a>
+  }
+  return <button type="button" className={cls} disabled={p.disabled} aria-label={p.label} onClick={() => p.onClick?.()}>{body}</button>
 }
 
 export type Tone = 'ok' | 'warn' | 'bad' | 'info' | 'amber' | 'plain' | 'mute' | 'ink' | 'blue'
 export const Pill = ({ tone = 'plain', children }: Kids & { tone?: Tone | string }) => <span className={'pill ' + tone}>{children}</span>
 
-export function Seg<T extends string>({ value, onChange, options, tone }: { value: T; onChange: (v: T) => void; options: (T | [T, string])[]; tone?: 'amber' | 'blue' }) {
+export function Seg<T extends string>({ value, onChange, options, tone, labelledBy }: { value: T; onChange: (v: T) => void; options: (T | [T, string])[]; tone?: 'amber' | 'blue'; labelledBy?: string }) {
   return (
-    <div className={cx('seg', tone)} role="group">
+    <div className={cx('seg', tone)} role="group" aria-labelledby={labelledBy}>
       {options.map(o => { const [v, l] = Array.isArray(o) ? o : [o, o]; return <button key={v} aria-pressed={v === value} onClick={() => onChange(v)}>{l}</button> })}
     </div>
   )
 }
 
-export function Chips<T extends string>({ value, onChange, options, single }: { value: T[]; onChange: (v: T[]) => void; options: (T | [T, string])[]; single?: boolean }) {
+export function Chips<T extends string>({ value, onChange, options, single, labelledBy }: { value: T[]; onChange: (v: T[]) => void; options: (T | [T, string])[]; single?: boolean; labelledBy?: string }) {
   return (
-    <div className="chips">
+    <div className="chips" role="group" aria-labelledby={labelledBy}>
       {options.map(o => {
         const [v, l] = Array.isArray(o) ? o : [o, o]
         const on = value.includes(v)
@@ -94,8 +115,16 @@ export function Chips<T extends string>({ value, onChange, options, single }: { 
   )
 }
 
+/**
+ * Ledetekst over et felt. Rundt ett inntastingsfelt er dette en vanlig <label>.
+ * Rundt en gruppe med knapper navngir den gruppen i stedet, slik at et trykk på ledeteksten ikke velger den første knappen.
+ */
 export function Field({ label, hint, children, row }: Kids & { label: string; hint?: ReactNode; row?: boolean }) {
-  return <label className={cx('field', row && 'row')}><span className="field-l">{label}{hint && <small>{hint}</small>}</span>{children}</label>
+  const id = useId()
+  const cls = cx('field', row && 'inline')
+  const group = isValidElement(children) && (children.type === Seg || children.type === Chips || children.type === StarInput)
+  if (group) return <div className={cls}><span className="field-l" id={id}>{label}{hint && <small>{hint}</small>}</span>{cloneElement(children as ReactElement<{ labelledBy?: string }>, { labelledBy: id })}</div>
+  return <label className={cls}><span className="field-l">{label}{hint && <small>{hint}</small>}</span>{children}</label>
 }
 export const Toggle = ({ on, onChange, label, sub }: { on: boolean; onChange: (v: boolean) => void; label: ReactNode; sub?: ReactNode }) => (
   <label className="toggle"><span><b>{label}</b>{sub && <small>{sub}</small>}</span><input type="checkbox" role="switch" checked={on} onChange={e => onChange(e.target.checked)} /></label>
@@ -128,15 +157,23 @@ export function Avatar({ name, size = 44 }: { name: string; size?: number }) {
 export function Stars({ value, n }: { value: number | null; n?: number }) {
   return <span className="stars"><Icon name="star" size={14} fill />{value == null ? 'Ingen vurderinger' : value.toLocaleString('nb-NO', { minimumFractionDigits: 1 })}{n != null && value != null && <small> ({n})</small>}</span>
 }
-export function StarInput({ value, onChange }: { value: number; onChange: (n: number) => void }) {
-  return <div className="starinput" role="group" aria-label="Vurdering">{[1, 2, 3, 4, 5].map(i => <button key={i} aria-label={`${i} av 5`} aria-pressed={i <= value} onClick={() => onChange(i)}><Icon name="star" size={30} fill={i <= value} /></button>)}</div>
+export function StarInput({ value, onChange, labelledBy }: { value: number; onChange: (n: number) => void; labelledBy?: string }) {
+  return <div className="starinput" role="group" aria-label={labelledBy ? undefined : 'Vurdering'} aria-labelledby={labelledBy}>{[1, 2, 3, 4, 5].map(i => <button key={i} aria-label={`${i} av 5`} aria-pressed={i <= value} onClick={() => onChange(i)}><Icon name="star" size={30} fill={i <= value} /></button>)}</div>
 }
 
-/** Rad i en liste: bilde, tittel, undertekst og noe til høyre. */
+/**
+ * Rad i en liste: bilde, tittel, undertekst og noe til høyre.
+ * En rad som kan åpnes, har tittelen som lenke eller knapp, og trykkflaten dekker hele raden.
+ * Slik kan raden også inneholde egne knapper til høyre uten at knapper ligger inni hverandre.
+ */
 export function Row(p: Kids & { thumb?: ReactNode; title: ReactNode; sub?: ReactNode; right?: ReactNode; onClick?: () => void; to?: string }) {
-  const body = <>{p.thumb}<div className="row-main"><h3>{p.title}</h3>{p.sub && <p>{p.sub}</p>}{p.children}</div>{p.right && <div className="row-right">{p.right}</div>}</>
-  const click = p.onClick ?? (p.to ? () => nav(p.to!) : undefined)
-  return click ? <button className="row row-btn" onClick={click}>{body}</button> : <div className="row">{body}</div>
+  const title = p.onClick ? <button type="button" className="row-hit" onClick={p.onClick}>{p.title}</button>
+    : p.to ? <a className="row-hit" {...link(p.to)}>{p.title}</a> : p.title
+  return (
+    <div className={cx('row', (p.onClick || p.to) && 'row-btn')}>
+      {p.thumb}<div className="row-main"><h3>{title}</h3>{p.sub && <p>{tie(p.sub)}</p>}{p.children}</div>{p.right && <div className="row-right">{p.right}</div>}
+    </div>
+  )
 }
 
 // ---------- Bilder og tegninger ----------
@@ -193,7 +230,8 @@ export function MiniMap({ points, height = 300 }: { points: { place: string; lab
         {[...groups.entries()].map(([place, g]) => {
           const [x, y] = proj(g[0].c[0], g[0].c[1])
           return (
-            <g key={place} className="map-pin" onClick={g[0].onClick} style={{ cursor: g[0].onClick ? 'pointer' : undefined }}>
+            <g key={place} className="map-pin" onClick={g[0].onClick} style={{ cursor: g[0].onClick ? 'pointer' : undefined }}
+              {...(g[0].onClick ? { role: 'button', tabIndex: 0, 'aria-label': `${place}: ${g.length} objekt`, onKeyDown: (e: { key: string; preventDefault(): void }) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); g[0].onClick!() } } } : {})}>
               <circle cx={x} cy={y} r={g.length > 1 ? 15 : 11} className={g.some(p => p.tone === 'bad') ? 'bad' : g.some(p => p.tone === 'amber') ? 'amber' : ''} />
               <text x={x} y={y + 4.5} textAnchor="middle" className="map-n">{g.length}</text>
               <text x={x + 20} y={y + 5} className="map-l">{place}</text>
@@ -224,7 +262,7 @@ export function Sheet({ title, onClose, children, footer }: Kids & { title: stri
   const close = useCallback(() => {
     if (timer.current != null) return
     setClosing(true)
-    timer.current = window.setTimeout(() => latest.current(), 190)
+    timer.current = window.setTimeout(() => latest.current(), 200)
   }, [])
   useEffect(() => {
     const id = Symbol('ark')

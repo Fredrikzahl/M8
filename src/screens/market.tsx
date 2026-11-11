@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import type { Listing, Obj, ObjType, State, Wish } from '../types'
-import { AiTag, Avatar, Btn, Card, Chips, DemoSwitch, Empty, Field, KV, Notice, Page, Pill, Row, Section, Seg, Sheet, StarInput, Thumb, Toggle, Wordmark, ask, toast } from '../ui/kit'
+import { AiTag, Avatar, Btn, Card, Chips, DemoSwitch, Empty, Field, KV, Notice, Page, Pill, Row, Section, Seg, Sheet, StarInput, Thumb, Toggle, ask, toast } from '../ui/kit'
 import { SwipeCard } from '../ui/widgets'
 import { Icon } from '../ui/icons'
-import { back, nav, useRoute } from '../router'
+import { back, link, nav, useRoute } from '../router'
 import { canSee, co, coName, insuranceStatus, lst, ob, ratingOf, sellerLabel, useMe, useS, wishOf, type Me } from '../store'
 import {
   addWanted, answerBid, completeSale, passListing, placeBid, rateCompany, requestContact, resetPasses, respondWanted, saveWish, sendMessage, toggleFav, withdrawRequest,
@@ -37,7 +37,7 @@ function MCard({ l, o, score }: { l: Listing; o: Obj; score?: number | null }) {
         <span className="bl">{o.place}{d != null && d > 0 ? ` · ca. ${d} km unna` : ''}</span>
       </div>
       <div className="mcard-b">
-        <div className="hstack between" style={{ alignItems: 'flex-start' }}><h1>{o.name}</h1><span className="price">{priceText(l)}</span></div>
+        <div className="hstack between" style={{ alignItems: 'flex-start' }}><h2 className="h1">{o.name}</h2><span className="price">{priceText(l)}</span></div>
         <div className="tags">
           <span className="tagbox">{o.year}</span>{o.type !== 'Redskap' && <span className="tagbox">{readingText(o)}</span>}
           {l.withDriver && <span className="tagbox">Kan leies med fører</span>}{drop && <span className="tagbox">Pris senket</span>}
@@ -60,8 +60,8 @@ export function Sveip() {
   const fav = (id: string) => s.favorites.some(f => f.userId === me.user.id && f.listingId === id)
   const ins = insuranceStatus(me.company).filter(i => i.tone !== 'ok')
   return (
-    <Page brand={<h1><Wordmark a="Sale" size={30} /></h1>} eyebrow="Markedet" right={<TopActions />}>
-      {ins.length > 0 && <Notice tone="warn" icon="shield">{ins[0].text}. Utleier ser dette når du spør om leie. <button className="link" onClick={() => nav('/bedrift')}>Legg inn forsikringsbevis</button></Notice>}
+    <Page title="Markedet" eyebrow="SaleM8" right={<TopActions />}>
+      {ins.length > 0 && <Notice tone="warn" icon="shield">{ins[0].text}. Utleier ser dette når du spør om leie. <a className="link" {...link('/bedrift')}>Legg inn forsikringsbevis</a></Notice>}
       <Seg value={mode} onChange={setMode} options={[['sveip', 'Sveip'], ['liste', `Liste (${all.length})`]]} />
       {mode === 'sveip' && (
         <div className="deck">
@@ -119,7 +119,7 @@ export function Maskin({ id }: { id: string }) {
   }
   const acc = (key: string, title: string, sub: string, body: React.ReactNode) => (
     <div key={key}>
-      <button className="acc-h" aria-expanded={open === key} onClick={() => setOpen(open === key ? null : key)}>{title}<span>{sub} {open === key ? '−' : '+'}</span></button>
+      <button className="acc-h" aria-expanded={open === key} onClick={() => setOpen(open === key ? null : key)}>{title}<span>{sub}<Icon name="down" size={16} sw={2.2} /></span></button>
       {open === key && <div className="acc-b">{body}</div>}
     </div>
   )
@@ -136,11 +136,12 @@ export function Maskin({ id }: { id: string }) {
         {!l.active && !own && <Notice tone="plain" icon="info">Annonsen er ikke lenger aktiv.</Notice>}
         {own && <Notice tone="info" icon="eye">Slik ser annonsen ut for andre. Navnet ditt skjules til du har akseptert kjøperen.</Notice>}
         <div className="hstack between" style={{ alignItems: 'flex-start' }}>
-          <div><h1>{o.name}</h1><p className="muted">{[o.make, o.model, o.year].filter(Boolean).join(' · ')} · {o.place}</p></div>
-          <div className="right"><p className="price">{priceText(l)}</p>{l.mode === 'leie' && l.from && <small>Ledig {fmtPeriod(l.from, l.to)}</small>}</div>
+          <div className="grow"><h1>{o.name}</h1><p className="muted">{[o.make, o.model, o.year].filter(Boolean).join(' · ')} · {o.place}</p></div>
+          <p className="price">{priceText(l)}</p>
         </div>
         <div className="tags">
           {o.type !== 'Redskap' && <span className="tagbox">{readingText(o)}</span>}<span className="tagbox">{tonn(o.weightKg)}</span><span className="tagbox">Tilstand {o.condition}/5</span>
+          {l.mode === 'leie' && l.from && <span className="tagbox">Ledig {fmtPeriod(l.from, l.to)}</span>}
           {l.withDriver && <span className="tagbox">Fører {kr(l.driverRate ?? 0)}/t</span>}{l.bidDeadline && <span className="tagbox">Budfrist {fmtDate(l.bidDeadline)}</span>}
         </div>
         {l.reservedFor && l.reservedFor !== me.company.id && !own && <Notice tone="warn" icon="lock">Reservert for en annen kjøper etter akseptert bud.</Notice>}
@@ -194,7 +195,7 @@ export function Favoritter() {
             <Row key={f.id} to={`/maskin/${l.id}`} thumb={<Thumb src={listingSrc(s, l, o)} type={o.type} alt={o.name} className="lg" />} title={o.name} sub={`${priceText(l)} · ${o.place}`}
               right={<>
                 {gone ? <Pill tone="mute">{o.status === 'solgt' ? 'Solgt' : 'Ikke aktiv'}</Pill> : l.price < f.seenPrice ? <Pill tone="ok">Senket {kr(f.seenPrice - l.price)}</Pill> : <Pill tone={l.mode === 'leie' ? 'amber' : 'ink'}>{l.mode === 'leie' ? 'Til leie' : 'Til salgs'}</Pill>}
-                <span role="button" tabIndex={0} className="link" onClick={ev => { ev.stopPropagation(); toggleFav(l.id) }} onKeyDown={ev => { if (ev.key === 'Enter') { ev.stopPropagation(); toggleFav(l.id) } }}>Fjern</span>
+                <button className="link" aria-label={`Fjern ${o.name} fra favoritter`} onClick={() => { toggleFav(l.id); toast('Fjernet fra favoritter') }}>Fjern</button>
               </>} />
           )
         })}
@@ -296,7 +297,7 @@ export function MatchThread({ id }: { id: string }) {
       footer={<><input value={text} onChange={e => setText(e.target.value)} placeholder="Skriv en melding" aria-label="Melding" onKeyDown={e => { if (e.key === 'Enter' && text.trim()) { sendMessage(id, text.trim()); setText('') } }} /><Btn kind="amber" icon="send" label="Send melding" disabled={!text.trim()} onClick={() => { sendMessage(id, text.trim()); setText('') }}>{''}</Btn></>}>
       <Row to={seller ? `/objekt/${o.id}` : `/maskin/${l.id}`} thumb={<Thumb src={listingSrc(s, l, o)} type={o.type} alt={o.name} />} title={o.name} sub={`${priceText(l)}${l.bidDeadline ? ` · budfrist ${fmtDate(l.bidDeadline)}` : ''}`} right={<Icon name="right" size={18} />} />
       {r.rentalId && <Btn kind="quiet" to={`/leie/${r.rentalId}`} icon="handshake">Åpne leieforholdet</Btn>}
-      {sale && <Notice tone="ok" icon="check">Salget ble gjennomført {fmtDate(sale.at)} for {kr(sale.price)}. {seller ? 'Objektet ligger i arkivet ditt.' : <button className="link" onClick={() => nav(`/objekt/${sale.newObjId}`)}>Åpne det nye objektkortet</button>}</Notice>}
+      {sale && <Notice tone="ok" icon="check">Salget ble gjennomført {fmtDate(sale.at)} for {kr(sale.price)}. {seller ? 'Objektet ligger i arkivet ditt.' : <a className="link" {...link(`/objekt/${sale.newObjId}`)}>Åpne det nye objektkortet</a>}</Notice>}
       {soldElsewhere && <Notice tone="plain" icon="info">Objektet er solgt til en annen kjøper.</Notice>}
 
       <div className="chat">
@@ -382,7 +383,7 @@ export function Onskes() {
               <p>{w.text}</p>
               <p className="hint">{own ? 'Din etterlysning' : 'Verifisert bedrift'}</p>
               {w.responses.filter(x => own || x.companyId === me.company.id).map(x => (
-                <div key={x.id} className="msg" style={{ maxWidth: '100%' }}><b>{own ? coName(s, x.companyId) : 'Ditt svar'}: </b>{x.text}{x.listingId && <> <button className="link" onClick={() => nav(`/maskin/${x.listingId}`)}>Se annonsen</button></>}</div>
+                <div key={x.id} className="msg" style={{ maxWidth: '100%' }}><b>{own ? coName(s, x.companyId) : 'Ditt svar'}: </b>{x.text}{x.listingId && <> <a className="link" {...link(`/maskin/${x.listingId}`)}>Se annonsen</a></>}</div>
               ))}
               {own && !w.responses.length && <p className="hint">Ingen svar ennå.</p>}
               {!own && <Btn kind="quiet" small onClick={() => { setReply(w.id); setRt({ text: '', listingId: '' }) }}>Svar</Btn>}

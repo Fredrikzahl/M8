@@ -49,7 +49,10 @@ Lys og mørk modus bruker de samme reglene med hvert sitt sett farger.
 - Inter brukes til all tekst. Oswald brukes bare i logoen og i poengene på Topp 100.
 - På mobil er menyen nederst, sidene har stor tittel som krymper inn i toppfeltet når du ruller, og dialoger kommer opp som ark nedenfra som kan dras ned.
 - På PC er menyen til venstre, lister ligger i flere kolonner, og dialoger vises midt på skjermen.
-- Bevegelse er kort og kan slås av med systemvalget for redusert bevegelse.
+- Hver side har en vanlig tittel, med merket for delen den hører til (FleetM8, SaleM8, LogM8 eller Topp 100) som en liten linje over.
+- Alt som bare tar deg til en annen side er ekte lenker, så de kan åpnes i ny fane. Hele raden er trykkbar, og små knapper har et trykkfelt på minst 40 punkter.
+- Bevegelse er kort og brukes bare når du går inn i eller ut av noe: sider du blar til, ark og meldinger. Bytte mellom fanene i menyen er uten animasjon. Alt kan slås av med systemvalget for redusert bevegelse.
+- Appen kan brukes med tastatur: «Hopp til innholdet» ligger først, fokus flyttes til siden du åpner, og ark og søk holder på fokus til de lukkes.
 
 ## Dette er simulert eller ikke koblet til
 

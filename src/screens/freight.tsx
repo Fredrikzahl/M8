@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import type { FreightJob, JobReq, Photo, State, Trip } from '../types'
-import { Btn, Card, Chips, DemoSwitch, Empty, Field, KV, MiniMap, Notice, Page, Pill, Row, Section, Seg, Sheet, StarInput, Stars, Toggle, Wordmark, ask, toast } from '../ui/kit'
+import { Btn, Card, Chips, DemoSwitch, Empty, Field, KV, MiniMap, Notice, Page, Pill, Row, Section, Seg, Sheet, StarInput, Stars, Toggle, ask, toast } from '../ui/kit'
 import { PhotoField, SignaturePad, SwipeCard } from '../ui/widgets'
 import { Icon } from '../ui/icons'
-import { nav, useRoute } from '../router'
+import { link, nav, useRoute } from '../router'
 import { co, coName, ob, ratingOf, useMe, useS, userName, type Me } from '../store'
 import { bidBlock, bidJob, bookTrip, cancelJob, chooseBid, createJob, hitchPrice, jobDeliver, jobPickup, passJob, rateCompany, resetJobPasses, saveTrip, type NewJob } from '../actions'
 import { addDays, detourKm, distKm, fmtDT, fmtWhen, kr, now, num, rel, tonn } from '../lib/util'
@@ -34,7 +34,7 @@ export function FraktSend() {
     .filter(t => t.live && t.companyId !== me.company.id && t.accepts.includes(f.cargo) && t.freeKg >= f.weightKg && new Date(t.departAt).getTime() > Date.now() && (!reqs.includes('loyve') || co(s, t.companyId)?.transport?.permit))
     .map(t => ({ t, d: detourKm(t.from, t.to, f.fromPlace, f.toPlace) })).filter((x): x is { t: Trip; d: number } => x.d != null && x.d <= 90).sort((a, b) => a.d - b.d)
   return (
-    <Page brand={<h1><Wordmark a="Log" tone="blue" size={30} /></h1>} eyebrow="Send noe" right={<TopActions />}
+    <Page title="Send noe" eyebrow="LogM8" right={<TopActions />}
       footer={<Btn kind="blue" icon="send" onClick={() => { if (!ok()) return; const id = createJob(job()); toast('Oppdraget er lagt ut. Transportører kan gi bud.', 'ok'); nav(`/frakt/jobb/${id}`) }}>Legg ut for bud</Btn>}>
       {mine.length > 0 && <Field label="Hent fra parken" hint="Valgfritt"><select value={f.objId ?? ''} onChange={e => { const o = mine.find(x => x.id === e.target.value); if (o) up({ objId: o.id, title: o.name, weightKg: o.weightKg, fromPlace: o.place, cargo: 'Maskiner' }); else up({ objId: undefined }) }}><option value="">Noe annet</option>{mine.map(o => <option key={o.id} value={o.id}>{o.name} · {o.place}</option>)}</select></Field>}
       <Field label="Hva skal fraktes?"><input value={f.title} onChange={e => up({ title: e.target.value })} placeholder="For eksempel «Minigraver 3 t»" /></Field>
@@ -66,7 +66,7 @@ function JCard({ j, detour }: { j: FreightJob; detour?: { t: Trip; d: number } |
     <div className="mcard">
       <div className="mcard-b">
         <div className="hstack between"><Pill tone="blue">{j.cargo}</Pill>{j.tag && <Pill>{j.tag}</Pill>}</div>
-        <h1>{j.title}</h1>
+        <h2 className="h1">{j.title}</h2>
         <div className="routeline"><b>{j.fromPlace}</b><Icon name="right" size={18} /><b>{j.toPlace}</b></div>
         <div className="tags"><span className="tagbox">{kmText(j.fromPlace, j.toPlace)}</span><span className="tagbox">{tonn(j.weightKg)}</span><span className="tagbox">{fmtWhen(j.when)}</span>{j.reqs.map(q => <span key={q} className="tagbox">{REQ_LABEL[q]}</span>)}</div>
         {detour && <Notice tone="ok" icon="route">Langs turen din {detour.t.from} → {detour.t.to}: {detour.d === 0 ? 'ingen omvei' : `${detour.d} km omvei`}.</Notice>}
@@ -106,7 +106,7 @@ export function FraktOppdrag() {
   const list = (mode === 'rute' ? open.filter(x => x.detour && x.detour.d <= 120).sort((a, b) => a.detour!.d - b.detour!.d) : [...open].sort((a, b) => a.j.when.localeCompare(b.j.when))).filter(x => !passed.includes(x.j.id))
   const top = list[0]
   return (
-    <Page brand={<h1><Wordmark a="Log" tone="blue" size={30} /></h1>} eyebrow="Oppdrag" right={<TopActions />}>
+    <Page title="Oppdrag" eyebrow="LogM8" right={<TopActions />}>
       {!me.company.transport?.permit && <Notice tone="warn" icon="shield">Bedriften har ikke registrert løyve. Du kan gi bud på oppdrag under 3,5 tonn.</Notice>}
       <Seg tone="blue" value={mode} onChange={setMode} options={[['rute', 'Langs ruten'], ['alle', 'Alle oppdrag']]} />
       <div className="deck">
@@ -147,7 +147,7 @@ export function FraktTur() {
     saveTrip({ ...f, departAt: new Date(f.departAt).toISOString() }); setF(null); toast('Turen er lagret. Kunder langs ruten kan henge seg på.', 'ok')
   }
   return (
-    <Page brand={<h1><Wordmark a="Log" tone="blue" size={30} /></h1>} eyebrow="Ledig på tur" right={<TopActions />} sub="Kjører du likevel, kan andre henge seg på. Du får også forslag til returlast.">
+    <Page title="Ledig på tur" eyebrow="LogM8" right={<TopActions />} sub="Kjører du likevel, kan andre henge seg på. Du får også forslag til returlast.">
       <Btn kind="blue" icon="plus" onClick={() => setF({ ...blank })}>Ny ledig tur</Btn>
       {!mine.length && <p className="hint">Du har ingen turer ennå.</p>}
       {mine.map(t => { const n = t.live ? fits(t) : 0; return (
@@ -155,7 +155,7 @@ export function FraktTur() {
           <div className="hstack between"><h3>{t.from} → {t.to}</h3><Pill tone={t.live ? 'blue' : 'mute'}>{t.live ? 'Synlig' : 'Skjult'}</Pill></div>
           <p className="muted">{t.vehicleName} · {fmtWhen(t.departAt)} · {tonn(t.freeKg)} ledig · {kr(t.pricePerKm)} per km</p>
           <div className="tags">{t.accepts.map(a => <span key={a} className="tagbox">{a}</span>)}</div>
-          {n > 0 && <Notice tone="ok" icon="route">{n} åpne oppdrag passer denne turen. <button className="link" onClick={() => nav('/frakt/oppdrag')}>Se oppdragene</button></Notice>}
+          {n > 0 && <Notice tone="ok" icon="route">{n} åpne oppdrag passer denne turen. <a className="link" {...link('/frakt/oppdrag')}>Se oppdragene</a></Notice>}
           <div className="hstack"><Btn kind="quiet" small onClick={() => setF({ ...t, departAt: localDT(t.departAt) })}>Endre</Btn><Btn kind="ghost" small onClick={() => saveTrip({ ...t, live: !t.live })}>{t.live ? 'Skjul' : 'Vis igjen'}</Btn></div>
         </Card>
       ) })}
@@ -184,7 +184,7 @@ export function FraktMine() {
   const row = (j: FreightJob, right: React.ReactNode) => <Row key={j.id} to={`/frakt/jobb/${j.id}`} thumb={<span className="taskicon flytt"><Icon name="truck" size={20} /></span>} title={j.title} sub={`${j.fromPlace} → ${j.toPlace} · ${fmtWhen(j.when)}`} right={right} />
   const pill = (j: FreightJob) => <Pill tone={j.status === 'levert' ? 'ok' : j.status === 'avlyst' ? 'mute' : 'blue'}>{j.status === 'apent' ? `${j.bids.length} bud` : JOB_LABEL[j.status]}</Pill>
   return (
-    <Page brand={<h1><Wordmark a="Log" tone="blue" size={30} /></h1>} eyebrow="Mine oppdrag" right={<TopActions />} wide>
+    <Page title="Mine oppdrag" eyebrow="LogM8" right={<TopActions />} wide>
       {!sending.length && !driving.length && !bidding.length && <Empty title="Ingen oppdrag ennå" text="Send noe, eller gi bud på et oppdrag."><Btn kind="blue" to="/frakt/send">Send noe</Btn><Btn kind="ghost" to="/frakt/oppdrag">Se oppdrag</Btn></Empty>}
       {driving.length > 0 && <Section title="Jeg kjører"><div className="cols">{driving.map(j => row(j, pill(j)))}</div></Section>}
       {bidding.length > 0 && <Section title="Bud som venter"><div className="cols">{bidding.map(j => row(j, <b className="num">{kr(j.bids.find(b => b.companyId === me.company.id)!.amount)}</b>))}</div></Section>}
@@ -222,7 +222,7 @@ export function FraktJobb({ id }: { id: string }) {
           ['Kunde', coName(s, j.ownerId)], ...(chosen ? [['Transportør', coName(s, chosen.companyId)] as [string, string], ['Avtalt pris', kr(chosen.amount)] as [string, string]] : []),
           ...(chosen && pct ? [[`Kommisjon ${pct} %`, kr((chosen.amount * pct) / 100)] as [string, string]] : []),
         ]} />
-        {j.rentalId && (owner || carrier) && <button className="link" onClick={() => nav(`/leie/${j.rentalId}`)}>Hører til et leieforhold</button>}
+        {j.rentalId && (owner || carrier) && <a className="link" {...link(`/leie/${j.rentalId}`)}>Hører til et leieforhold</a>}
       </Card>
 
       {owner && j.status === 'apent' && <Section title={`Bud (${bids.length})`}>

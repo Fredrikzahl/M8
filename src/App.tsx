@@ -1,7 +1,7 @@
-import { Component, useEffect, useState, type ReactNode } from 'react'
+import { Component, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { View } from './types'
 import { meOf, useS, viewsFor, type Me } from './store'
-import { match, nav, navRoot, useRoute } from './router'
+import { link, match, nav, navRoot, useRoute } from './router'
 import { myNotes, setView } from './actions'
 import { PLACE_NAMES, VIEW_LABEL, VIEW_SUB } from './lib/util'
 import { Avatar, Btn, Dialogs, Empty, Field, Page, Pill, Row, Seg, Sheet, Wordmark } from './ui/kit'
@@ -91,6 +91,15 @@ export function App() {
   const [viewsOpen, setViewsOpen] = useState(false)
   const [search, setSearch] = useState(false)
   const theme = useTheme()
+  const main = useRef<HTMLElement>(null)
+  // Etter et sidebytte starter tastatur og skjermleser øverst i det nye innholdet, ikke på et element som er borte.
+  const first = useRef(true)
+  useEffect(() => {
+    if (first.current) { first.current = false; return }
+    // Et åpent ark eller søk hører til siden man kom fra, også når man går med nettleserens tilbakeknapp.
+    setViewsOpen(false); setSearch(false)
+    main.current?.focus({ preventScroll: true })
+  }, [path])
   useEffect(() => {
     shell.setOpener(() => setViewsOpen(true)); shell.setSearch(() => setSearch(true))
     // Ctrl K eller ⌘K åpner søket fra hvor som helst. Skråstrek gjør det samme når man ikke skriver i et felt.
@@ -137,6 +146,7 @@ export function App() {
 
   return (
     <div className="app" data-view={me.view}>
+      <button className="skip" onClick={() => main.current?.focus()}>Hopp til innholdet</button>
       <nav className="side" aria-label="Hovedmeny">
         <div className="side-brand">
           <Wordmark a="Plan" tone="amber" size={26} />
@@ -144,9 +154,9 @@ export function App() {
         </div>
         <button className="side-search" onClick={() => setSearch(true)}><Icon name="search" size={16} /><span>Søk</span><kbd>{mac ? '⌘K' : 'Ctrl K'}</kbd></button>
         {tabs.map(t => (
-          <button key={t.path} className="side-link" aria-current={active === t ? 'page' : undefined} onClick={() => navRoot(t.path)}>
-            <Icon name={t.icon} size={19} />{t.label}{badge(t.path) > 0 && <span className="dot">{badge(t.path)}</span>}
-          </button>
+          <a key={t.path} className="side-link" aria-current={active === t ? 'page' : undefined} {...link(t.path, true)}>
+            <Icon name={t.icon} size={19} />{t.label}{badge(t.path) > 0 && <span className="dot">{badge(t.path)}<span className="sr"> nye</span></span>}
+          </a>
         ))}
         {views.length > 1 && <><div className="side-sep" /><p className="side-cap">Visninger</p></>}
         {views.length > 1 && views.map(v => (
@@ -155,18 +165,18 @@ export function App() {
           </button>
         ))}
         <div className="side-foot">
-          <button className="side-link" aria-current={clean === '/varsler' ? 'page' : undefined} onClick={() => nav('/varsler')}><Icon name="bell" size={19} />Varsler{unread > 0 && <span className="dot">{unread}</span>}</button>
+          <a className="side-link" aria-current={clean === '/varsler' ? 'page' : undefined} {...link('/varsler')}><Icon name="bell" size={19} />Varsler{unread > 0 && <span className="dot">{unread}<span className="sr"> uleste</span></span>}</a>
           <button className="side-link side-user" onClick={() => nav('/login')} aria-label={`${me.user.name}, ${me.company.name}. Bytt demobruker`}>
             <Avatar name={me.user.name} size={34} /><span><b>{me.user.name}</b><small>{me.company.name}</small></span><Icon name="swap" size={16} />
           </button>
         </div>
       </nav>
-      <main className="main"><Guard k={real}>{screen ?? <Missing />}</Guard></main>
+      <main className="main" ref={main} tabIndex={-1}><Guard k={real}>{screen ?? <Missing />}</Guard></main>
       <nav className="tabs" aria-label="Hovedmeny">
         {tabs.map(t => (
-          <button key={t.path} className="tab" aria-current={active === t ? 'page' : undefined} onClick={() => navRoot(t.path)}>
-            <span className="tab-ic"><Icon name={t.icon} size={22} sw={active === t ? 2.2 : 1.9} />{badge(t.path) > 0 && <span className="dot">{badge(t.path)}</span>}</span><span>{t.label}</span>
-          </button>
+          <a key={t.path} className="tab" aria-current={active === t ? 'page' : undefined} {...link(t.path, true)}>
+            <span className="tab-ic"><Icon name={t.icon} size={22} sw={active === t ? 2.2 : 1.9} />{badge(t.path) > 0 && <span className="dot">{badge(t.path)}<span className="sr"> nye</span></span>}</span><span>{t.label}</span>
+          </a>
         ))}
       </nav>
       {viewsOpen && (
