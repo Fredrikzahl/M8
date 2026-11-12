@@ -3,7 +3,7 @@ import type { FormDamage, HandoverForm, Photo, Rental, State } from '../types'
 import { AiTag, Btn, Card, Chips, DemoSwitch, Empty, Field, KV, Notice, Page, Pill, Row, Section, Seg, Sheet, StarInput, Thumb, Toggle, ask, toast } from '../ui/kit'
 import { DamageSketch, GuidedCamera, SignaturePad } from '../ui/widgets'
 import { Icon } from '../ui/icons'
-import { nav } from '../router'
+import { link, nav } from '../router'
 import { coName, ob, useMe, useS, userName } from '../store'
 import {
   addClaim, addTime, answerClaim, answerInspection, approveTime, cancelRental, decideFinding, jobFromRental, lockInspection, payAdvance, rateCompany, saveForm,
@@ -83,7 +83,7 @@ export function Leie({ id }: { id: string }) {
           <>
             {r.status === 'forskudd' && <Btn kind="amber" icon="camera" to={`/leie/${r.id}/utlevering`}>Start utlevering</Btn>}
             {r.status === 'forskudd' && !jobs.length && <Btn kind="quiet" small icon="truck" onClick={() => order('utlevering')}>Bestill frakt til leietaker</Btn>}
-            {r.handover && <button className="link" onClick={() => nav(`/leie/${r.id}/utlevering`)}>Se utleveringsskjemaet</button>}
+            {r.handover && <a className="link" {...link(`/leie/${r.id}/utlevering`)}>Se utleveringsskjemaet</a>}
           </>)}
         {step(4, 'I leie', r.status === 'utlevert' ? (daysBetween(today(), r.to) >= 0 ? `${daysBetween(today(), r.to)} dager igjen` : `Skulle vært levert ${fmtDate(r.to)}`) : r.ret ? `${days} dager` : 'Fra utlevering til retur',
           r.status === 'utlevert' && <>
@@ -97,7 +97,7 @@ export function Leie({ id }: { id: string }) {
           <>
             {r.status === 'utlevert' && <Btn kind="amber" icon="camera" to={`/leie/${r.id}/retur`}>Start retur</Btn>}
             {r.status === 'utlevert' && jobs.length < 2 && <Btn kind="quiet" small icon="truck" onClick={() => order('retur')}>Bestill returfrakt</Btn>}
-            {r.ret && <button className="link" onClick={() => nav(`/leie/${r.id}/retur`)}>Se returskjemaet</button>}
+            {r.ret && <a className="link" {...link(`/leie/${r.id}/retur`)}>Se returskjemaet</a>}
           </>)}
         {step(6, 'Mottakskontroll', r.inspection?.lockedAt ? `Låst ${fmtDate(r.inspection.lockedAt)} av ${r.inspection.lockedBy}` : r.inspection?.sentAt ? (r.inspection.lesseeStatus ? `Leietaker har ${r.inspection.lesseeStatus === 'godkjent' ? 'godkjent' : 'kommentert'}` : 'Sendt til leietaker') : 'Avtalt mot målt, linje for linje',
           r.inspection && <Btn kind={cur === 6 ? 'amber' : 'quiet'} small={cur !== 6} icon="file" to={`/leie/${r.id}/kontroll`}>{r.inspection.lockedAt ? 'Se mottakskontrollen' : lessor ? 'Åpne mottakskontrollen' : r.inspection.sentAt ? 'Se og svar på mottakskontrollen' : 'Utleier går gjennom returen'}</Btn>)}
@@ -288,8 +288,8 @@ export function Kontroll({ id }: { id: string }) {
   const other = counterpart(s, r, side)
   const shot = (form: HandoverForm | undefined, angle: string) => form?.photos.find(p => p.angle === angle) ?? form?.photos[1] ?? form?.photos[0]
   const footer = locked ? <>
-    {canPrint() && <Btn kind="ghost" onClick={printPage}>Skriv ut eller lagre som PDF</Btn>}
-    <Btn icon="download" onClick={async () => { const res = await saveFile(`mottakskontroll-${r.no}.html`, docHtml(s, r), 'text/html'); toast(res === 'lagret' ? 'Dokumentet er lagret' : 'Kunne ikke lagre fila her', res === 'lagret' ? 'ok' : 'bad') }}>Last ned dokumentet</Btn>
+    {canPrint() && <Btn kind="ghost" onClick={printPage}>Skriv ut</Btn>}
+    <Btn icon="download" onClick={async () => { const res = await saveFile(`mottakskontroll-${r.no}.html`, docHtml(s, r), 'text/html'); toast(res === 'lagret' ? 'Dokumentet er lagret' : 'Kunne ikke lagre fila her', res === 'lagret' ? 'ok' : 'bad') }}>Last ned</Btn>
   </> : lessor ? (!i.sentAt || i.lesseeStatus === 'kommentert'
     ? <Btn kind="amber" icon="send" disabled={open > 0} onClick={() => { sendInspection(r.id); toast('Sendt til leietaker for godkjenning', 'ok') }}>{open > 0 ? `Vurder ${open} funn først` : i.sentAt ? 'Send på nytt til leietaker' : 'Send til leietaker'}</Btn>
     : <Btn kind="amber" icon="lock" onClick={async () => { if (i.lesseeStatus === 'godkjent' || await ask('Leietaker har ikke svart ennå. Vil du låse mottakskontrollen likevel?', 'Lås')) { lockInspection(r.id); toast('Mottakskontrollen er låst og klar for fakturering', 'ok') } }}>Lås mottakskontrollen</Btn>)
@@ -300,7 +300,7 @@ export function Kontroll({ id }: { id: string }) {
         : lessor ? <Notice tone="info" icon="info">{!i.sentAt ? 'Gå gjennom funnene og linjene, og send kontrollen til leietaker.' : i.lesseeStatus === 'godkjent' ? 'Leietaker har godkjent. Du kan låse.' : i.lesseeStatus === 'kommentert' ? `Leietaker har kommentert: «${i.lesseeComment}»` : 'Sendt til leietaker. Venter på svar.'}</Notice>
           : <Notice tone="info" icon="info">{!i.sentAt ? 'Utleier går gjennom returen. Du får varsel når kontrollen er klar.' : i.lesseeStatus ? `Du har ${i.lesseeStatus === 'godkjent' ? 'godkjent' : 'kommentert'}. Utleier låser kontrollen.` : 'Se over linjene. Godkjenn, eller skriv en kommentar hvis noe ikke stemmer.'}</Notice>}
       <div className="doc">
-        <div className="hstack between"><div><h1>Mottakskontroll</h1><p className="muted">{o.name} · {o.internalId}</p></div><Pill tone={locked ? 'ok' : 'warn'}>{locked ? 'Låst' : 'Utkast'}</Pill></div>
+        <div className="hstack between"><div><h2 className="h1">Mottakskontroll</h2><p className="muted">{o.name} · {o.internalId}</p></div><Pill tone={locked ? 'ok' : 'warn'}>{locked ? 'Låst' : 'Utkast'}</Pill></div>
         <KV rows={[['Utleier', coName(s, r.lessorId)], ['Leietaker', coName(s, r.lesseeId)], ['Periode', fmtPeriod(r.from, r.to)], [o.meter === 'timer' ? 'Timer' : 'Kilometer', `${num(r.handover!.reading)} → ${num(r.ret!.reading)} ${meterUnit(o.meter)}`], ['Drivstoff', `${fuelLabel(r.handover!.fuel)} → ${fuelLabel(r.ret!.fuel)}`]]} />
 
         {i.findings.length > 0 && <div className="stack">

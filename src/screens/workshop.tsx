@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { LeadType, TaskStatus } from '../types'
 import { AiTag, Bar, Btn, Card, Empty, Notice, ObjThumb, Page, Pill, Row, Section, Seg, Stat, Thumb, toast } from '../ui/kit'
-import { nav } from '../router'
+import { link, nav } from '../router'
 import { has, isAdmin, ob, useMe, useS, userName } from '../store'
 import { advanceTask, setAvailability } from '../actions'
 import { daysBetween, fmtDate, kr, krShort, meterUnit, num, rel, STATUS_LABEL, sum, TASK_ICON, toCsv, today } from '../lib/util'
@@ -139,7 +139,7 @@ export function Rapporter() {
         <div className="tablewrap card" style={{ padding: 0 }}>
           <table>
             <thead><tr><th>Objekt</th><th>Status</th><th>Brukt 30 d</th><th>Leieinntekt</th><th>Estimert verdi</th></tr></thead>
-            <tbody>{objs.map(o => { const e = estimate(o); return <tr key={o.id} onClick={() => nav(`/objekt/${o.id}`)} style={{ cursor: 'pointer' }}><td><b>{o.name}</b></td><td>{STATUS_LABEL[o.status]}</td><td className="num">{Math.round((o.usage30 / 30) * 100)} %</td><td className="num">{perObj(o.id) ? kr(perObj(o.id)) : '–'}</td><td className="num">{num(e.low)}–{num(e.high)}</td></tr> })}</tbody>
+            <tbody>{objs.map(o => { const e = estimate(o); return <tr key={o.id} className="rowlink" onClick={() => nav(`/objekt/${o.id}`)}><td><a {...link(`/objekt/${o.id}`)}>{o.name}</a></td><td>{STATUS_LABEL[o.status]}</td><td className="num">{Math.round((o.usage30 / 30) * 100)} %</td><td className="num">{perObj(o.id) ? kr(perObj(o.id)) : '–'}</td><td className="num">{num(e.low)}–{num(e.high)}</td></tr> })}</tbody>
           </table>
         </div>
       </Section>

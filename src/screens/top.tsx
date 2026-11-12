@@ -103,7 +103,7 @@ export function RatingMode() {
   const mine = s.votes.filter(v => v.userId === me.user.id).length
   const next = () => setScore(75)
   return (
-    <Page tone="night" short="Topp 100" brand={<T100 />} eyebrow="Ratingmodus" back="/topp100" right={<Pill tone="ink-inv">{mine} stemmer gitt</Pill>}>
+    <Page tone="night" title="Ratingmodus" eyebrow="Topp 100" back="/topp100" right={<Pill tone="ink-inv">{mine} stemmer gitt</Pill>}>
       {!b ? (
         <Empty title="Du har stemt på alle" text="Kom tilbake når nye blinkskudd er godkjent.">
           {skipped.length > 0 && <Btn kind="amber" onClick={() => setSkipped([])}>Vis de du hoppet over</Btn>}
@@ -114,7 +114,7 @@ export function RatingMode() {
           <div className="mcard">
             <div className="mcard-img"><Thumb src={b.photo.src} type={b.objType} alt={b.objName} /><span className="tl"><Pill tone="glass">{CAT_LABEL[b.category]}</Pill></span><span className="bl">{b.area}</span></div>
             <div className="mcard-b">
-              <h1>{b.objName}</h1>
+              <h2 className="h1">{b.objName}</h2>
               <div className="hstack"><span className="score">{score}</span><div className="grow"><input type="range" min={1} max={100} value={score} onChange={e => setScore(Number(e.target.value))} aria-label="Poeng fra 1 til 100" /><div className="hstack between"><small>1</small><small>100</small></div></div></div>
             </div>
           </div>
@@ -135,7 +135,7 @@ export function Vinnere() {
   const nowD = new Date()
   const months = Array.from({ length: 36 }, (_, i) => new Date(nowD.getFullYear(), nowD.getMonth() - i, 1))
   return (
-    <Page tone="night" short="Topp 100" brand={<T100 />} eyebrow="Vinnerveggen" back="/topp100" wide sub="Månedens vinner de siste 36 månedene. Samme maskin kan vinne én gang per år.">
+    <Page tone="night" title="Vinnerveggen" eyebrow="Topp 100" back="/topp100" wide sub="Månedens vinner de siste 36 månedene. Samme maskin kan vinne én gang per år.">
       <div className="wall">
         {months.map((m, i) => {
           const w = s.winners.find(x => x.year === m.getFullYear() && x.month === m.getMonth())

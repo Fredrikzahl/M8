@@ -60,6 +60,21 @@ if (typeof window !== 'undefined') {
   })
 }
 
+/**
+ * Egenskaper for en ekte lenke. Et vanlig klikk går gjennom ruteren, mens Ctrl-klikk, ⌘-klikk og midtklikk
+ * åpner siden i ny fane, slik lenker ellers gjør på nettet. Med `root` nullstilles historikken som fra menyen.
+ */
+export function link(to: string, root = false) {
+  return {
+    href: '#' + to,
+    onClick(e: { metaKey: boolean; ctrlKey: boolean; shiftKey: boolean; altKey: boolean; button: number; defaultPrevented: boolean; preventDefault(): void }) {
+      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
+      e.preventDefault()
+      if (root) navRoot(to); else nav(to)
+    },
+  }
+}
+
 export const useRoute = () => useSyncExternalStore(l => { listeners.add(l); return () => { listeners.delete(l) } }, () => path)
 
 /** Sammenligner en rute som «/objekt/:id» med gjeldende sti. */

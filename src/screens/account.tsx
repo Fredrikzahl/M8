@@ -75,7 +75,7 @@ export function Login() {
           return (
             <button key={u.id} className="persona" onClick={() => pick(u.id)}>
               <Avatar name={u.name} />
-              <span className="grow" style={{ flex: 1, minWidth: 0 }}><b>{u.name} · {c?.name}</b><small>{BLURB[u.id] ?? u.memberships[0].roles.map(r => ROLE_LABEL[r]).join(', ')}</small></span>
+              <span className="grow"><b>{u.name}</b><span className="persona-co">{c?.name}</span><small>{BLURB[u.id] ?? u.memberships[0].roles.map(r => ROLE_LABEL[r]).join(', ')}</small></span>
               {me?.user.id === u.id ? <Pill tone="amber">Aktiv</Pill> : <Icon name="right" size={18} />}
             </button>
           )
@@ -214,7 +214,7 @@ export function Bedrift() {
         <p className="hint">Utleier ser status på forsikringen din før de godkjenner en forespørsel. Du får varsel før et bevis utløper.</p>
         {c.insurance.map(i => (
           <Row key={i.id} title={COVERAGE_LABEL[i.coverage]} sub={`${i.insurer} · polise ${i.policyNo} · gyldig til ${fmtDate(i.expires, true)}`}
-            right={admin ? <button className="iconbtn small" aria-label="Fjern forsikringsbevis" onClick={() => removeInsurance(i.id)}><Icon name="trash" size={16} /></button> : undefined} />
+            right={admin ? <button className="iconbtn small" aria-label="Fjern forsikringsbevis" onClick={async () => { if (await ask(`Fjerne forsikringsbeviset for ${COVERAGE_LABEL[i.coverage].toLowerCase()}? Utleiere ser da at dekningen mangler.`, 'Fjern beviset', true)) { removeInsurance(i.id); toast('Forsikringsbeviset er fjernet') } }}><Icon name="trash" size={16} /></button> : undefined} />
         ))}
         {!c.insurance.length && <Notice tone="bad" icon="warn">Ingen forsikringsbevis er lastet opp.</Notice>}
         {insOpen && (
@@ -235,7 +235,7 @@ export function Bedrift() {
       </Section>
 
       <Section title="Avdelinger">
-        <div className="chips">{c.departments.map(d => <span key={d} className="chip" aria-pressed="false">{d}</span>)}{!c.departments.length && <p className="hint">Ingen avdelinger.</p>}</div>
+        <div className="tags">{c.departments.map(d => <span key={d} className="tagbox">{d}</span>)}{!c.departments.length && <p className="hint">Ingen avdelinger.</p>}</div>
         {admin && <div className="hstack"><input value={dept} onChange={e => setDept(e.target.value)} placeholder="Ny avdeling" aria-label="Ny avdeling" /><Btn kind="quiet" small onClick={() => { if (dept.trim()) { updateCompany({ departments: [...c.departments, dept.trim()] }); setDept('') } }}>Legg til</Btn></div>}
       </Section>
 
